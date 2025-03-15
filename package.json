@@ -1,0 +1,22 @@
+{
+  "name": "sudoku2_db",
+  "version": "2.0.0",
+  "description": "database for sudoku 2.0 app",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mems2001/sudoku_db.git"
+  },
+  "keywords": [
+    "database"
+  ],
+  "author": "mems2001",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mems2001/sudoku_db/issues"
+  },
+  "homepage": "https://github.com/Mems2001/sudoku_db#readme"
+}
