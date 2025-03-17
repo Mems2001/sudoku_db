@@ -4,6 +4,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
 
+//Router imports
+const sudokuRouter = require('./routes/sudoku.routes.js');
+
 // Api settings
 const app = express();
 const port = process.env.PORT;
@@ -37,7 +40,9 @@ app.get('/', (req , res) => {
     status: 'up' ,
     maintenance: false
   })
-})
+});
+
+app.use('/api/v1/sudokus' , sudokuRouter);
 
 //Database connection
 const db = require("../utils/database.js");
@@ -48,3 +53,6 @@ db.authenticate()
 db.sync()
     .then(() => console.log("Database correctly sincronized"))
     .catch((err) => console.log(err))
+
+app.listen(port, () => {
+        console.log(`Server on PORT: ${port}`)})
