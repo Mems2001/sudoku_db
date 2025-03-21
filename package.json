@@ -8,7 +8,8 @@
     "dev": "nodemon ./src/app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "u_mig_all": "sequelize-cli db:migrate:undo:all",
-    "mig_all": "sequelize-cli db:migrate"
+    "mig_all": "sequelize-cli db:migrate",
+    "db_reset": "npm run u_mig_all && npm run mig_all"
   },
   "repository": {
     "type": "git",

@@ -14,7 +14,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Sudokus.init({
-    number: DataTypes.STRING
+    number: DataTypes.STRING,
+    grid: DataTypes.JSON
   }, {
     sequelize,
     modelName: 'Sudokus',

@@ -8,12 +8,16 @@ module.exports = {
       await queryInterface.createTable('sudokus', {
         id: {
           allowNull: false,
+          unique: true,
           primaryKey: true,
-          type: Sequelize.UUID,
-          unique: true
+          type: Sequelize.UUID
         },
         number: {
-          type: Sequelize.STRING
+          type: Sequelize.STRING,
+          unique: true
+        },
+        grid: {
+          type: Sequelize.JSON
         },
         createdAt: {
           allowNull: false,
@@ -23,27 +27,24 @@ module.exports = {
           allowNull: false,
           type: Sequelize.DATE
         }
-      } , {transaction});
-  
+      }, { transaction });
+
       await transaction.commit();
     } catch (error) {
       await transaction.rollback();
-
-      throw error
+      throw error;
     }
-
+    
   },
   async down(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
-      await queryInterface.dropTable('sudokus' , {transaction});
-
-      await transaction.commit()
+      await queryInterface.dropTable('sudokus', { transaction });
+      await transaction.commit();
     } catch (error) {
       await transaction.rollback();
-
-      throw error
+      throw error;
     }
   }
 };

@@ -1,7 +1,6 @@
-require('dotenv').config();
+const dotenv = require('dotenv').config();
 
-module.exports = 
-{
+module.exports = {
   "api": {jwtSecret : process.env.JWT_SECRET},
   "development": {
     "username": process.env.DB_USER_LOCAL,
