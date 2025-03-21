@@ -24,7 +24,34 @@ function getRandomSudoku (req , res) {
         })
 }
 
+function getAllSudokus (req , res) {
+    sudokuServices.findAllSudokus()
+        .then(data => {
+            res.status(200).json(data)
+        })
+        .catch(err => {
+            res.status(400).json({
+                err
+            })
+        })
+}
+
+function getSudokuById (req , res) {
+    const { id } = req.params;
+    sudokuServices.findSudokuById(id)
+        .then(data => {
+            res.status(200).json(data)
+        })
+        .catch(err => {
+            res.status(400).json({
+                err
+            })
+        })
+}
+
 module.exports = {
     produceSudoku,
-    getRandomSudoku
+    getRandomSudoku,
+    getAllSudokus,
+    getSudokuById
 }

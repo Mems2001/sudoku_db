@@ -32,13 +32,37 @@ async function createSudoku () {
 }
 
 async function findRandomSudoku () {
+    try {
+        const data = await models.Sudokus.findOne({
+            order: models.sequelize.random()
+        });
+        if (!data) {
+            throw new Error('No Sudoku puzzles found in the database.');
+        }
+        return data
+    } catch (error) {
+        console.error('Error finding random Sudoku:', error);
+        throw error;
+    }
+}
+
+async function findAllSudokus () {
+    const data = await models.Sudokus.findAndCountAll();
+    return data
+}
+
+async function findSudokuById (id) {
     const data = await models.Sudokus.findOne({
-        order: models.sequelize.random()
+        where: {
+            id
+        }
     });
-    return data;
+    return data
 }
 
 module.exports = {
     createSudoku, 
-    findRandomSudoku
+    findRandomSudoku,
+    findAllSudokus,
+    findSudokuById
 }
