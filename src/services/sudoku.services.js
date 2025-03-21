@@ -1,9 +1,8 @@
-const Sudoku = require('../../utils/createSudoku');
+const Sudoku = require('../../utils/createSudoku2');
 
 async function createSudoku () {
     const data = new Sudoku();
-    data.sudokuStructure();
-    data.createSudoku();
+    data.generateSudoku();
     return data
 }
 
