@@ -1,5 +1,6 @@
 const models = require('../../models');
 const Sudoku = require('../../utils/createSudoku2');
+const uuid = require('uuid');
 
 async function createSudoku () {
     const transaction = await models.sequelize.transaction();
@@ -16,6 +17,7 @@ async function createSudoku () {
             }
         }
         const data = await models.Sudokus.create({
+            id: uuid.v4(),
             number,
             grid
         }, {transaction});
@@ -29,6 +31,14 @@ async function createSudoku () {
     }
 }
 
+async function findRandomSudoku () {
+    const data = await models.Sudokus.findOne({
+        order: models.sequelize.random()
+    });
+    return data;
+}
+
 module.exports = {
-    createSudoku
+    createSudoku, 
+    findRandomSudoku
 }
