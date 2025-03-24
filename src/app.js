@@ -1,22 +1,25 @@
-//Dependencies
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-require('dotenv').config();
+//  Dependencies imports
+const cookieParser = require('cookie-parser')
+const express = require('express')
+const cors = require('cors')
+const helmet = require('helmet')
+require('dotenv').config()
 
-//Router imports
-const sudokuRouter = require('./routes/sudoku.routes.js');
+//  Router imports
+const authRouter = require('./routes/auth.routes.js')
+const sudokuRouter = require('./routes/sudoku.routes.js')
 
 // Api settings
-const app = express();
-const port = process.env.PORT;
+const app = express()
+const port = process.env.PORT
+app.use(cookieParser())
 
 // Cors settings
 const whitelist = [`https://localhost:${port}`]
 const corsOptions = {
-  origin: (origin , callback) => {
+  origin: (origin, callback) => {
     if (whitelist.includes(origin) || !origin) {
-      callback (null , true)
+      callback(null, true)
     } else {
       callback(new Error('Denied by CORS'))
     }
@@ -25,26 +28,27 @@ const corsOptions = {
 
 if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development') {
   app.use(cors())
-  app.use(helmet({crossOriginResourcePolicy: false}))
+  app.use(helmet({ crossOriginResourcePolicy: false }))
 } else {
   app.use(cors(corsOptions))
 }
 
 //  Accept json & form-urlencoded
 app.use(express.json())
-app.use(express.urlencoded({extended: true}))
+app.use(express.urlencoded({ extended: true }))
 
 // Routes
-app.get('/', (req , res) => {
+app.get('/', (req, res) => {
   res.status(200).json({
-    status: 'up' ,
+    status: 'up',
     maintenance: false
   })
-});
+})
 
-app.use('/api/v1/sudokus' , sudokuRouter);
+app.use('/api/v1/sudokus' , sudokuRouter)
+app.use('/api/v1/auth' , authRouter)
 
-//Database connection
+//  Database connection
 const db = require("../utils/database.js");
 
 db.authenticate()

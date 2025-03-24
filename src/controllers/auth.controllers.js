@@ -26,7 +26,14 @@ async function login (req, res) {
         }
         //JWT generation
         const token = await generateJWT(user.id , user.roleId);
-        res.status(200).json({
+        res
+        .cookie('access-token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 3600000 // 1hr
+        })
+        .status(200).json({
             token
         });
     } catch (error) {
@@ -37,6 +44,20 @@ async function login (req, res) {
     }
 }
 
+function register (req, res) {
+   usersServices.createUser(req.body)
+    .then((user) => {
+        res.status(201).json(user);
+    })
+    .catch((error) => {
+        console.log(error);
+        res.status(400).json({
+            message: "Something went wrong, talk to any administrator"
+        });
+    });
+}
+
 module.exports = {
-    login
+    login,
+    register
 }
