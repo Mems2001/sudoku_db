@@ -16,11 +16,15 @@ async function createSudoku () {
                 }
             }
         }
-        const data = await models.Sudokus.create({
+        let data = await models.Sudokus.create({
             id: uuid.v4(),
             number,
             grid
         }, {transaction});
+
+        if (!data) {
+            data = createSudoku()
+        }
 
         await transaction.commit();
         return data;
