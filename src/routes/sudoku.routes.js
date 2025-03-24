@@ -1,4 +1,4 @@
-const sudokuControlles = require('../controllers/sudoku.controllers');
+const sudokuControlles = require('../controllers/sudokus.controllers');
 
 const router = require('express').Router();
 

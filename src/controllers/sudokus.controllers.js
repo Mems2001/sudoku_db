@@ -1,4 +1,4 @@
-const sudokuServices = require('../services/sudoku.services');
+const sudokuServices = require('../services/sudokus.services');
 
 function produceSudoku (req , res) {
     sudokuServices.createSudoku()
