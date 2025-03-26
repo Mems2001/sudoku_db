@@ -12,19 +12,15 @@ module.exports = {
           primaryKey: true,
           type: Sequelize.UUID
         },
-        userName: {
+        username: {
           type: Sequelize.STRING,
           unique: true,
-          allowNull: false,
-          field: 'user_name'
+          allowNull: false
         },
         email: {
           type: Sequelize.STRING,
           unique: true,
-          allowNull: false,
-          validate: {
-            isEmail: true
-          }
+          allowNull: false
         },
         password: {
           type: Sequelize.STRING,
@@ -33,6 +29,15 @@ module.exports = {
             len: [8, 20]
           }
         },
+        roleId: {
+          allowNull: false,
+          type: Sequelize.UUID,
+          field: 'role_id',
+          references: {
+            model: 'roles',
+            key: 'id'
+          }
+        },  
         createdAt: {
           allowNull: false,
           type: Sequelize.DATE,
@@ -57,6 +62,8 @@ module.exports = {
 
     try {
       await queryInterface.dropTable('users' , {transaction});
+
+      await transaction.commit()
     } catch (error) {
       await transaction.rollback();
       console.error('Error dropping table:', error);

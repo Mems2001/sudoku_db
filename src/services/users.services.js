@@ -2,21 +2,33 @@ const models = require('../../models')
 const uuid = require('uuid')
 const { hashPassword } = require('../../utils/bcrypt')
 
-async function findUserByUserName (userName) {
+async function findUserByUserName (username) {
     return models.Users.findOne({
         where: {
-            userName
+            username
         }
     })
 }
 
-async function createUser ({userName , email , password}) {
+async function findUserByEmail (email) {
+    return models.Users.findOne({
+        where: {
+            email
+        }
+    })
+}
+
+async function createUser ({username , email , password}) {
     const transaction = await models.sequelize.transaction()
+
+    const userRole = await models.Roles.findOne({where:{name:'user'}}).catch(err => {console.error(err)})
+    
     try {
         const newUser = await models.Users.create({
             id: uuid.v4(),
-            userName,
+            username,
             email,
+            role_id: userRole.id,
             password: hashPassword(password)
         }, { transaction })
         await transaction.commit()
@@ -29,5 +41,6 @@ async function createUser ({userName , email , password}) {
 
 module.exports = {
     findUserByUserName,
-    createUser
+    createUser,
+    findUserByEmail
 }

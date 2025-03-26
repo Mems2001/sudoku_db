@@ -1,21 +1,29 @@
-const usersServices = require('../services/users.services');
+const usersServices = require('../services/users.services')
+const models = require('../../models')
 const { comparePasswords } = require('../../utils/bcrypt');
 const { generateJWT } = require('../../utils/generate-jwt');
+const {verify} = require('jsonwebtoken')
 
 async function login (req, res) {
-    const {user_name , email , password} = req.body;
+    const {useUsername , username , email , password} = req.body
 
     try {
         //User existance verification
         let user = null;
-        user = await usersServices.findUserByUserName(user_name);
-        if (!user) {
+        if (useUsername) {
+            user = await usersServices.findUserByUserName(username);
+            if (!user) {
+                return res.status(404).json({
+                    message: "username not found"
+                });
+            }
+        } else {
             user = await usersServices.findUserByEmail(email);
-        }
-        if (!user) {
-            return res.status(404).json({
-                message: "email or username are not correct"
-            });
+            if (!user) {
+                return res.status(404).json({
+                    message: "email not found"
+                });
+            }
         }
         //Password validation
         const validatePassword = await comparePasswords(password , user.password);
@@ -25,17 +33,23 @@ async function login (req, res) {
             });
         }
         //JWT generation
-        const token = await generateJWT(user.id , user.roleId);
-        res
-        .cookie('access-token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 3600000 // 1hr
-        })
-        .status(200).json({
-            token
-        });
+        const accesToken = await generateJWT(user.id , user.role_id , '1h');
+        const refreshToken = await generateJWT(user.id , user.role_id , '7 d');
+        res.cookie('access-token', accesToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 1000*60*60*24 // 1 day
+            })
+        // res.cookie('refresh-token' , refreshToken , {
+        //     httpOnly: true,
+        //         secure: process.env.NODE_ENV === 'production',
+        //         sameSite: 'strict',
+        //         maxAge: 1000*60*60*24*7 // 7 days
+        // })
+        res.status(200).json({
+                message: "User logged in"
+            })
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -44,20 +58,36 @@ async function login (req, res) {
     }
 }
 
-function register (req, res) {
-   usersServices.createUser(req.body)
-    .then((user) => {
-        res.status(201).json(user);
+function logout (req , res) {
+    res.clearCookie('access-token')
+    res.status(200).json({
+        message: "User logged out"
     })
-    .catch((error) => {
-        console.log(error);
+}
+
+async function authenticateSession (req ,res) {
+    const cookie = req.cookies['access-token']
+    
+    if (cookie) {
+        const data = verify(cookie , process.env.JWT_SECRET)
+        const role = await models.Roles.findOne({
+            where: {
+                id: data.role_id
+            }
+        })
+        res.status(200).json({
+            message: "Session authenticated",
+            role: role.name
+        })
+    } else {
         res.status(400).json({
-            message: "Something went wrong, talk to any administrator"
-        });
-    });
+            message: 'Not logged in'
+        })
+    }
 }
 
 module.exports = {
     login,
-    register
+    logout,
+    authenticateSession
 }

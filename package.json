@@ -9,6 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "u_mig_all": "sequelize-cli db:migrate:undo:all",
     "mig_all": "sequelize-cli db:migrate",
+    "seeds_all": "sequelize-cli db:seed:all",
     "db_reset": "npm run u_mig_all && npm run mig_all"
   },
   "repository": {

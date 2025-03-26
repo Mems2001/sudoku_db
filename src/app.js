@@ -7,7 +7,8 @@ require('dotenv').config()
 
 //  Router imports
 const authRouter = require('./routes/auth.routes.js')
-const sudokuRouter = require('./routes/sudoku.routes.js')
+const sudokusRouter = require('./routes/sudokus.routes.js')
+const usersRouter = require('./routes/users.routes.js')
 
 // Api settings
 const app = express()
@@ -15,23 +16,10 @@ const port = process.env.PORT
 app.use(cookieParser())
 
 // Cors settings
-const whitelist = [`https://localhost:${port}`]
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (whitelist.includes(origin) || !origin) {
-      callback(null, true)
-    } else {
-      callback(new Error('Denied by CORS'))
-    }
-  }
-}
-
-if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development') {
-  app.use(cors())
-  app.use(helmet({ crossOriginResourcePolicy: false }))
-} else {
-  app.use(cors(corsOptions))
-}
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}))
 
 //  Accept json & form-urlencoded
 app.use(express.json())
@@ -45,8 +33,9 @@ app.get('/', (req, res) => {
   })
 })
 
-app.use('/api/v1/sudokus' , sudokuRouter)
 app.use('/api/v1/auth' , authRouter)
+app.use('/api/v1/sudokus' , sudokusRouter)
+app.use('/api/v1/users' , usersRouter)
 
 //  Database connection
 const db = require("../utils/database.js");
