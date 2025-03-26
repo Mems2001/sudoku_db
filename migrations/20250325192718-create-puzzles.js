@@ -14,10 +14,14 @@ module.exports = {
         },
         sudokuId: {
           type: Sequelize.UUID,
-          field: 'sudoku_id'
+          field: 'sudoku_id',
+          references: {
+            model: 'sudokus',
+            key: 'id'
+          }
         },
         number: {
-          type: Sequelize.INTEGER,
+          type: Sequelize.STRING,
           unique: true
         },
         grid: {

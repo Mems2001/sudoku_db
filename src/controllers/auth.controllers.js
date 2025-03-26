@@ -70,15 +70,23 @@ async function authenticateSession (req ,res) {
     
     if (cookie) {
         const data = verify(cookie , process.env.JWT_SECRET)
+        if (!data) {
+            res.status(400).json({
+                message: 'Not logged in'
+            })
+        }
         const role = await models.Roles.findOne({
             where: {
                 id: data.role_id
             }
         })
-        res.status(200).json({
-            message: "Session authenticated",
-            role: role.name
-        })
+
+        if (role) {
+            res.status(200).json({
+                message: "Session authenticated",
+                role: role.name
+            })
+        }
     } else {
         res.status(400).json({
             message: 'Not logged in'

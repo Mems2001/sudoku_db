@@ -11,6 +11,9 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Sudokus.hasMany(models.Puzzles , {
+        foreignKey: 'sudoku_id'
+      })
     }
   }
   Sudokus.init({

@@ -21,7 +21,7 @@ async function findUserByEmail (email) {
 async function createUser ({username , email , password}) {
     const transaction = await models.sequelize.transaction()
 
-    const userRole = await models.Roles.findOne({where:{name:'user'}}).catch(err => {console.error(err)})
+    const userRole = await models.Roles.findOne({where:{name:'admin'}}).catch(err => {console.error(err)})
     
     try {
         const newUser = await models.Users.create({

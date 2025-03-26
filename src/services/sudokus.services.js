@@ -22,17 +22,41 @@ async function createSudoku () {
             grid
         }, {transaction});
 
-        if (!data) {
+        const puzzle = sudoku.removeNumbers(sudoku.grid , 40)
+        let puzzleNumber = ''
+
+        for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+                if (puzzle[i][j] !== 0) {
+                    puzzleNumber += puzzle[i][j];
+                } else {
+                    puzzleNumber += '0'
+                }
+            }
+        }
+
+        let puzzleData = await models.Puzzles.create({
+            id: uuid.v4(),
+            sudoku_id: data.id,
+            number: puzzleNumber,
+            grid: puzzle
+        } , {transaction})
+
+        if (!data && !puzzleData) {
             data = createSudoku()
         }
 
         await transaction.commit();
-        return data;
+        return {data , puzzleData};
     } catch (error) {
         await transaction.rollback();
         console.log(error);
         throw error;
     }
+}
+
+async function createPuzzle() {
+
 }
 
 async function findRandomSudoku () {

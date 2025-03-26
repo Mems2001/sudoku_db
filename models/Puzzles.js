@@ -11,10 +11,16 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Puzzles.belongsTo(models.Sudokus , {
+        foreignKey: 'sudoku_id',
+        as: 'Sudoku'
+      })
     }
   }
   Puzzles.init({
-    sudokuId: DataTypes.UUID
+    sudokuId: DataTypes.UUID,
+    number: DataTypes.STRING,
+    grid: DataTypes.JSON
   }, {
     sequelize,
     modelName: 'Puzzles',

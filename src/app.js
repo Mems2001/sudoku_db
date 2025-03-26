@@ -9,6 +9,7 @@ require('dotenv').config()
 const authRouter = require('./routes/auth.routes.js')
 const sudokusRouter = require('./routes/sudokus.routes.js')
 const usersRouter = require('./routes/users.routes.js')
+const puzzlesRouter = require('./routes/puzzles.routes.js')
 
 // Api settings
 const app = express()
@@ -36,6 +37,7 @@ app.get('/', (req, res) => {
 app.use('/api/v1/auth' , authRouter)
 app.use('/api/v1/sudokus' , sudokusRouter)
 app.use('/api/v1/users' , usersRouter)
+app.use('/api/v1/puzzles' , puzzlesRouter)
 
 //  Database connection
 const db = require("../utils/database.js");
