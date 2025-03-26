@@ -1,6 +1,7 @@
 //  Dependencies imports
 const cookieParser = require('cookie-parser')
 const express = require('express')
+const session = require('express-session')
 const cors = require('cors')
 const helmet = require('helmet')
 require('dotenv').config()
@@ -10,11 +11,15 @@ const authRouter = require('./routes/auth.routes.js')
 const sudokusRouter = require('./routes/sudokus.routes.js')
 const usersRouter = require('./routes/users.routes.js')
 const puzzlesRouter = require('./routes/puzzles.routes.js')
+const gamesRouter = require('./routes/games.routes.js')
 
 // Api settings
 const app = express()
 const port = process.env.PORT
 app.use(cookieParser())
+app.use(session({
+  secret: process.env.SESSION_SECRET
+}))
 
 // Cors settings
 app.use(cors({
@@ -35,9 +40,10 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api/v1/auth' , authRouter)
+app.use('/api/v1/puzzles' , puzzlesRouter)
 app.use('/api/v1/sudokus' , sudokusRouter)
 app.use('/api/v1/users' , usersRouter)
-app.use('/api/v1/puzzles' , puzzlesRouter)
+app.use('/api/v1/games' , gamesRouter)
 
 //  Database connection
 const db = require("../utils/database.js");

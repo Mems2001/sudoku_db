@@ -22,6 +22,10 @@ module.exports = {
       {
         id: uuid.v4(),
         name: 'user'
+      } ,
+      {
+        id: uuid.v4(),
+        name: 'anon'
       }
     ]
 

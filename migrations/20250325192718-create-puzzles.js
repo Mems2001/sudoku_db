@@ -18,7 +18,9 @@ module.exports = {
           references: {
             model: 'sudokus',
             key: 'id'
-          }
+          },
+          onDelete: 'CASCADE',
+          onUpdate: 'CASCADE'
         },
         number: {
           type: Sequelize.STRING,

@@ -36,7 +36,9 @@ module.exports = {
           references: {
             model: 'roles',
             key: 'id'
-          }
+          },
+          onDelete: 'RESTRICT',
+          onUpdate: 'CASCADE'
         },  
         createdAt: {
           allowNull: false,

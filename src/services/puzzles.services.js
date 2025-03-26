@@ -12,7 +12,23 @@ async function findPuzzleBySudokuId(sudoku_id) {
     })
 }
 
+async function findRandomPuzzle () {
+    try {
+        const data = await models.Puzzles.findOne({
+            order: models.sequelize.random()
+        });
+        if (!data) {
+            throw new Error('No Sudoku puzzles found in the database.');
+        }
+        return data
+    } catch (error) {
+        console.error('Error finding random Puzzle:', error);
+        throw error;
+    }
+}
+
 module.exports = {
     findAllPuzzles,
-    findPuzzleBySudokuId
+    findPuzzleBySudokuId,
+    findRandomPuzzle
 }

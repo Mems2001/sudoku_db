@@ -59,6 +59,7 @@ async function login (req, res) {
 }
 
 function logout (req , res) {
+    req.session.user = null
     res.clearCookie('access-token')
     res.status(200).json({
         message: "User logged out"
@@ -68,28 +69,39 @@ function logout (req , res) {
 async function authenticateSession (req ,res) {
     const cookie = req.cookies['access-token']
     
-    if (cookie) {
-        const data = verify(cookie , process.env.JWT_SECRET)
-        if (!data) {
+    try {
+        if (cookie) {
+            const data = verify(cookie , process.env.JWT_SECRET)
+            if (!data) {
+                res.status(400).json({
+                    message: 'Not logged in'
+                })
+            }
+            const role = await models.Roles.findOne({
+                where: {
+                    id: data.role_id
+                }
+            })
+    
+            if (role) {
+                res.status(200).json({
+                    message: "Session authenticated",
+                    role: role.name
+                })
+            }  else {
+                res.status(400).json({
+                    message: 'Not logged in'
+                })
+            }
+        } else {
             res.status(400).json({
                 message: 'Not logged in'
             })
         }
-        const role = await models.Roles.findOne({
-            where: {
-                id: data.role_id
-            }
-        })
-
-        if (role) {
-            res.status(200).json({
-                message: "Session authenticated",
-                role: role.name
-            })
-        }
-    } else {
+    } catch (error) {
+        res.clearCookie('access-token')
         res.status(400).json({
-            message: 'Not logged in'
+            message: 'Expired token'
         })
     }
 }

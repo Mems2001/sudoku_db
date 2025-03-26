@@ -55,10 +55,6 @@ async function createSudoku () {
     }
 }
 
-async function createPuzzle() {
-
-}
-
 async function findRandomSudoku () {
     try {
         const data = await models.Sudokus.findOne({
