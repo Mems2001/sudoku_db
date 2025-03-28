@@ -18,21 +18,22 @@ module.exports = {
     */
    const transaction = await queryInterface.sequelize.transaction()
 
-   const admin = await models.Roles.findOne({
-    where: {
-        name: 'admin'
-    }
-   }).catch(err => {console.error(err)})
-
-   const users = {
-    id: uuid.v4(),
-    username: 'mems2001',
-    email: 'mems2001code@gmail.com',
-    password: hashPassword('mems200195'),
-    role_id: admin.id
-   }
-
    try {
+       const admin = await models.Roles.findOne({
+        where: {
+            name: 'admin'
+        }
+       }).catch(err => {console.error(err)})
+       console.log(admin)
+    
+       const users = {
+        id: uuid.v4(),
+        username: 'mems2001',
+        email: 'mems2001code@gmail.com',
+        password: hashPassword('mems200195'),
+        role_id: admin.id
+       }
+
        await queryInterface.bulkInsert('users' , users , {transaction})
 
        await transaction.commit()
