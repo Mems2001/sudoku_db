@@ -19,7 +19,7 @@ async function createSudoku () {
         let data = await models.Sudokus.create({
             id: uuid.v4(),
             number,
-            grid
+            grid: JSON.stringify(grid)
         }, {transaction});
 
         const puzzle = sudoku.removeNumbers(sudoku.grid , 40)
