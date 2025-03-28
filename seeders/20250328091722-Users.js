@@ -22,7 +22,7 @@ module.exports = {
     where: {
         name: 'admin'
     }
-   })
+   }).catch(err => {console.error(err)})
 
    const users = {
     id: uuid.v4(),
