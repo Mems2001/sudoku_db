@@ -31,7 +31,7 @@ module.exports = {
         username: 'mems2001',
         email: 'mems2001code@gmail.com',
         password: hashPassword('mems200195'),
-        role_id: admin.id
+        roleId: admin.dataValues.id
        }
 
        await queryInterface.bulkInsert('users' , users , {transaction})
