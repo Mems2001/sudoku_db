@@ -37,11 +37,79 @@ async function  findGameById (game_id) {
     return await models.Games.findOne({
         where: {
             id: game_id
+        },
+        include: [
+            {
+                model: models.Sudokus,
+                as: 'Sudoku',
+                attributes: ['id' , 'number' , 'grid']
+            },
+            {
+                model: models.Puzzles,
+                as: 'Puzzle',
+                attributes: ['id' , 'number' , 'grid']
+            }
+        ]
+    })
+}
+
+async function findSavedGames(user_id) {
+    return await models.Games.findAll({
+        where: {
+            user_id,
+            status: 0
         }
     })
 }
 
+async function updateGameById(game_id , {grid , status , errors , time}) {
+    const transaction = await models.sequelize.transaction()
+
+    try {
+        const game = await models.Games.findOne({
+            where: {
+                id: game_id
+            },
+            include: [
+                {
+                    model: models.Sudokus,
+                    as: 'Sudoku',
+                    attributes: ['id' , 'number' , 'grid']
+                }
+            ]
+        })
+
+        let number = game.number
+        if (grid) {
+            number = ''
+            for (let i=0 ; i < 9 ; i++) {
+                for (let j=0 ; j<9 ; j++) {
+                    number += String(grid[i][j])
+                }
+            }
+        }
+
+        // console.log(grid , number)
+
+        await game.update({
+            grid,
+            number,
+            status,
+            errors,
+            time
+        } , {transaction})
+
+        await transaction.commit()
+        return game
+    } catch (error) {
+        await transaction.rollback()
+        throw error
+    }
+}
+
 module.exports = {
     createGame,
-    findGameById
+    findGameById,
+    findSavedGames,
+    updateGameById
 }

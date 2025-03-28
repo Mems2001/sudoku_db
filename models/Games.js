@@ -31,7 +31,10 @@ module.exports = (sequelize, DataTypes) => {
     puzzleId: DataTypes.UUID,
     number: DataTypes.STRING,
     grid: DataTypes.JSON,
-    solved: DataTypes.BOOLEAN
+    status: DataTypes.INTEGER,
+    errors: DataTypes.INTEGER,
+    time: DataTypes.INTEGER,
+    // attempts: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Games',

@@ -26,7 +26,31 @@ function getGameById (req , res) {
         })
 }
 
+function getMySavedGames (req , res) {
+    gamesServices.findSavedGames(req.session.user.user_id)
+        .then(data => {
+            res.status(200).json(data)
+        })
+        .catch(data => {
+            res.status(400).json({error: data.message})
+        })
+}
+
+function patchGameById ( req , res ) {
+    gamesServices.updateGameById(req.params.game_id , req.body)
+        .then(data => {
+            res.status(200).json(data)
+        })
+        .catch(err => {
+            res.status(400).json({
+                error: err.message
+            })
+        })
+}
+
 module.exports = {
     postGame,
-    getGameById
+    getGameById,
+    getMySavedGames,
+    patchGameById
 }

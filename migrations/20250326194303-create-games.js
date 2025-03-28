@@ -54,11 +54,30 @@ module.exports = {
           type: Sequelize.JSON,
           allowNull: false
         },
-        solved: {
-          type: Sequelize.BOOLEAN,
+        status: {
+          type: Sequelize.INTEGER,
           allowNull: false,
-          defaultValue: false
+          defaultValue: 0 // 0 -> unsolved , 1 -> solved , 2 -> failed  
         },
+        errors: {
+          type: Sequelize.INTEGER,
+          allowNull: false,
+          defaultValue: 0,
+          validate: {
+            min: 0,
+            max: 3
+          }
+        },
+        time: {
+          type: Sequelize.INTEGER,
+          allowNull: false,
+          defaultValue: 0
+        },
+        // attempts: {
+        //   type: Sequelize.INTEGER,
+        //   defaultValue: 1,
+        //   allowNull: false
+        // },
         createdAt: {
           allowNull: false,
           type: Sequelize.DATE,

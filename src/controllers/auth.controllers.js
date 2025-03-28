@@ -33,7 +33,7 @@ async function login (req, res) {
             });
         }
         //JWT generation
-        const accesToken = await generateJWT(user.id , user.role_id , '1h');
+        const accesToken = await generateJWT(user.id , user.role_id , '1d');
         const refreshToken = await generateJWT(user.id , user.role_id , '7 d');
         res.cookie('access-token', accesToken, {
                 httpOnly: true,
