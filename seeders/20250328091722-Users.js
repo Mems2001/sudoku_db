@@ -24,15 +24,17 @@ module.exports = {
             name: 'admin'
         }
        }).catch(err => {console.error(err)})
-       console.log(admin)
+    //    console.log(admin)
     
-       const users = {
+       const users = [
+        {
         id: uuid.v4(),
         username: 'mems2001',
         email: 'mems2001code@gmail.com',
         password: hashPassword('mems200195'),
-        roleId: admin.dataValues.id
+        roleId: admin.id
        }
+    ]
 
        await queryInterface.bulkInsert('users' , users , {transaction})
 
