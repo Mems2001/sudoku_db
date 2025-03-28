@@ -2,6 +2,7 @@
 const uuid = require('uuid')
 const models = require('../models');
 const { Op, where } = require('sequelize');
+const {hashPassword} = require('../utils/bcrypt')
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
@@ -27,6 +28,7 @@ module.exports = {
     id: uuid.v4(),
     name: 'mems2001',
     email: 'mems2001code@gmail.com',
+    password: hashPassword('mems200195'),
     role_id: admin.id
    }
 
