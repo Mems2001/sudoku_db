@@ -23,7 +23,7 @@ app.use(session({
 
 // Cors settings
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173' , 'https://sudoku21.netlify.app'],
   credentials: true
 }))
 

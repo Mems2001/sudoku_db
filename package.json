@@ -10,7 +10,8 @@
     "u_mig_all": "sequelize-cli db:migrate:undo:all",
     "mig_all": "sequelize-cli db:migrate",
     "seeds_all": "sequelize-cli db:seed:all",
-    "db_reset": "npm run u_mig_all && npm run mig_all && npm run seeds_all"
+    "db_reset": "npm run u_mig_all && npm run mig_all && npm run seeds_all",
+    "deploy": "npm install && npm run db_reset"
   },
   "repository": {
     "type": "git",
