@@ -32,7 +32,7 @@ module.exports = {
         username: 'mems2001',
         email: 'mems2001code@gmail.com',
         password: hashPassword('mems200195'),
-        roleId: admin.id
+        role_id: admin.id
        }
     ]
 
