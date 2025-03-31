@@ -23,8 +23,14 @@ async function register (req, res) {
     }
 
     if (!user) {
-        usersServices.createUser(req.body)
+        usersServices.createUser(req.body , req.cookies['access-token'])
          .then((user) => {
+            req.session.user = null
+            res.clearCookie('access-token' , {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+                sameSite: 'none'
+            })
              res.status(201).json(user);
          })
          .catch((error) => {
@@ -36,6 +42,26 @@ async function register (req, res) {
     }
 }
 
+function getAnon(req , res) {
+    usersServices.createAnon()
+        .then(data => {
+            res.cookie('access-token' , data.accesToken , {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+                sameSite: 'none',
+                maxAge: 1000*60*60*24 // 1 day
+            })
+            req.session.user = data.user
+            res.status(201).json({message: 'Anon user'})
+        })
+        .catch(error => {
+            res.status(400).json({
+                error: error.message
+            })
+        })
+}
+
  module.exports = {
-        register
+        register,
+        getAnon
     }

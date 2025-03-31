@@ -1,7 +1,8 @@
 const usersServices = require('../services/users.services')
+const authServices = require('../services/auth.services')
 const models = require('../../models')
-const { comparePasswords } = require('../../utils/bcrypt');
-const { generateJWT } = require('../../utils/generate-jwt');
+const { comparePasswords } = require('../../utils/bcrypt')
+const { generateJWT } = require('../../utils/generate-jwt')
 const {verify} = require('jsonwebtoken')
 
 async function login (req, res) {
@@ -31,6 +32,22 @@ async function login (req, res) {
             return res.status(400).json({
                 message: "Wrong password"
             });
+        }
+        // Anon verification
+        const cookie = req.cookies['access-token']
+        if (cookie) {
+            const data = verify(cookie , process.env.JWT_SECRET)
+            authServices.reasignGames(data.user_id , user.id)
+                .then(() => {
+                    console.log('Games reassigned')
+                    usersServices.deleteUser(data.user_id)
+                    req.session.user = null
+                    res.clearCookie('access-token' , {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+                    sameSite: 'none'
+                })})
+                .catch(error => console.error({error}))
         }
         //JWT generation
         const accesToken = await generateJWT(user.id , user.role_id , '1d');
@@ -78,35 +95,55 @@ async function authenticateSession (req ,res) {
         if (cookie) {
             const data = verify(cookie , process.env.JWT_SECRET)
             if (!data) {
+                req.session.user = null
                 res.status(400).json({
-                    message: 'Not logged in'
+                    message: 'Session expired'
                 })
             }
+            const user = await models.Users.findOne({
+                where: {
+                    id: data.user_id
+                }
+            })
             const role = await models.Roles.findOne({
                 where: {
                     id: data.role_id
                 }
             })
     
-            if (role) {
+            if (role && user) {
+                req.session.user = user
                 res.status(200).json({
                     message: "Session authenticated",
                     role: role.name
                 })
             }  else {
+                req.session.user = null
+                res.clearCookie('access-token' , {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+                    sameSite: 'none'
+                })
                 res.status(400).json({
-                    message: 'Not logged in'
+                    message: "User doesn't exist"
                 })
             }
         } else {
+            req.session.user = null
             res.status(400).json({
-                message: 'Not logged in'
+                message: 'Cookie not found'
             })
         }
     } catch (error) {
-        res.clearCookie('access-token')
+        console.error(error)
+        req.session.user = null
+        res.clearCookie('access-token' , {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+            sameSite: 'none'
+        })
         res.status(400).json({
-            message: 'Expired token'
+            message: 'Error, not logged in'
         })
     }
 }
