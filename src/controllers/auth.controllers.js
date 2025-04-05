@@ -42,16 +42,17 @@ async function login (req, res) {
                     console.log('Games reassigned')
                     usersServices.deleteUser(data.user_id)
                     req.session.user = null
-                    res.clearCookie('access-token' , {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
-                    sameSite: 'none'
-                })})
+                    // res.clearCookie('access-token' , {
+                    // httpOnly: true,
+                    // secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+                    // sameSite: 'none'
+                    // })
+                })
                 .catch(error => console.error({error}))
         }
         //JWT generation
         const accesToken = await generateJWT(user.id , user.role_id , '1d');
-        const refreshToken = await generateJWT(user.id , user.role_id , '7 d');
+        // const refreshToken = await generateJWT(user.id , user.role_id , '7 d');
         res.cookie('access-token', accesToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
