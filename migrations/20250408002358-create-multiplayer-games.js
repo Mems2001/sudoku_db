@@ -5,24 +5,12 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction()
 
     try {
-      await queryInterface.createTable('games', {
+      await queryInterface.createTable('multiplayer_games', {
         id: {
           allowNull: false,
           unique: true,
           primaryKey: true,
           type: Sequelize.UUID
-        },
-        userId: {
-          type: Sequelize.UUID,
-          allowNull: false,
-          field: 'user_id',
-          foreignKey: true,
-          references: {
-            model: 'users',
-            key: 'id'
-          },
-          onDelete: 'CASCADE',
-          onUpdate: 'CASCADE'
         },
         sudokuId: {
           type: Sequelize.UUID,
@@ -43,12 +31,12 @@ module.exports = {
             model: 'puzzles',
             key: 'id'
           },
-          onDelete: 'CASCADE',
-          onUpdate: 'CASCADE'
+          onDelete: 'RESTRICT',
+          onUpdate: 'RESTRICT'
         },
         number: {
           type: Sequelize.STRING,
-          allowNull: false
+          allowNull: false,
         },
         grid: {
           type: Sequelize.JSON,
@@ -57,27 +45,13 @@ module.exports = {
         status: {
           type: Sequelize.INTEGER,
           allowNull: false,
-          defaultValue: 0 // 0 -> unsolved , 1 -> solved , 2 -> failed  
-        },
-        errors: {
-          type: Sequelize.INTEGER,
-          allowNull: false,
-          defaultValue: 0,
-          validate: {
-            min: 0,
-            max: 3
-          }
+          defaultValue: 0 // 0 -> unsolved , 1 -> solved , 2 -> failed 
         },
         time: {
           type: Sequelize.INTEGER,
           allowNull: false,
           defaultValue: 0
         },
-        // attempts: {
-        //   type: Sequelize.INTEGER,
-        //   defaultValue: 1,
-        //   allowNull: false
-        // },
         createdAt: {
           allowNull: false,
           type: Sequelize.DATE,
@@ -90,8 +64,7 @@ module.exports = {
           field: 'updated_at',
           defaultValue: new Date()
         }
-      } , {transaction})
-
+      } , {transaction});
       await transaction.commit()
     } catch (error) {
       await transaction.rollback()
@@ -102,8 +75,7 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction()
 
     try {
-      await queryInterface.dropTable('games' , {transaction})
-
+      await queryInterface.dropTable('multiplayer_games' , {transaction});
       await transaction.commit()
     } catch (error) {
       await transaction.rollback()

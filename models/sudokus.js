@@ -14,6 +14,12 @@ module.exports = (sequelize, DataTypes) => {
       Sudokus.hasMany(models.Puzzles , {
         foreignKey: 'sudoku_id'
       })
+      Sudokus.hasMany(models.Games , {
+        foreignKey: 'sudoku_id'
+      })
+      Sudokus.hasMany(models.MultiplayerGames , {
+        foreignKey: 'sudoku_id'
+      })
     }
   }
   Sudokus.init({

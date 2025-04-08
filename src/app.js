@@ -12,6 +12,7 @@ const sudokusRouter = require('./routes/sudokus.routes.js')
 const usersRouter = require('./routes/users.routes.js')
 const puzzlesRouter = require('./routes/puzzles.routes.js')
 const gamesRouter = require('./routes/games.routes.js')
+const multiplayerGamesRouter = require('./routes/multiplayerGames.routes.js')
 
 // Api settings
 const app = express()
@@ -44,6 +45,7 @@ app.use('/api/v1/puzzles' , puzzlesRouter)
 app.use('/api/v1/sudokus' , sudokusRouter)
 app.use('/api/v1/users' , usersRouter)
 app.use('/api/v1/games' , gamesRouter)
+app.use('/api/v1/games_vs' , multiplayerGamesRouter)
 
 //  Database connection
 const db = require("../utils/database.js");

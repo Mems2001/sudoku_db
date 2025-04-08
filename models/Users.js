@@ -14,6 +14,9 @@ module.exports = (sequelize, DataTypes) => {
       Users.hasMany(models.Games , {
         foreignKey: 'user_id'
       })
+      Users.hasMany(models.Players , {
+        foreignKey: 'user_id'
+      })
       Users.belongsTo(models.Roles , {
         foreignKey: 'role_id',
         as: 'Role'

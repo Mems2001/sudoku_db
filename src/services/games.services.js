@@ -20,8 +20,7 @@ async function createGame({puzzle_id , sudoku_id} , user_id) {
             sudoku_id,
             puzzle_id,
             number,
-            grid,
-            solved: false
+            grid
         } , {transaction})
 
         await transaction.commit()
