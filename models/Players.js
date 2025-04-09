@@ -27,7 +27,8 @@ module.exports = (sequelize, DataTypes) => {
     grid: DataTypes.JSON,
     number: DataTypes.STRING,
     errors: DataTypes.INTEGER,
-    status: DataTypes.INTEGER
+    status: DataTypes.INTEGER,
+    host: DataTypes.BOOLEAN
   }, {
     sequelize,
     modelName: 'Players',

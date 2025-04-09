@@ -55,7 +55,7 @@ async function login (req, res) {
         // const refreshToken = await generateJWT(user.id , user.role_id , '7 d');
         res.cookie('access-token', accesToken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+                // secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
                 sameSite: 'none',
                 maxAge: 1000*60*60*24 // 1 day
             })
@@ -80,7 +80,7 @@ function logout (req , res) {
     req.session.user = null
     res.clearCookie('access-token' , {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+        // secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
         sameSite: 'none'
     })
     res.status(200).json({
@@ -122,7 +122,7 @@ async function authenticateSession (req ,res) {
                 req.session.user = null
                 res.clearCookie('access-token' , {
                     httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+                    // secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
                     sameSite: 'none'
                 })
                 res.status(400).json({
@@ -140,7 +140,7 @@ async function authenticateSession (req ,res) {
         req.session.user = null
         res.clearCookie('access-token' , {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
+            // secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
             sameSite: 'none'
         })
         res.status(400).json({

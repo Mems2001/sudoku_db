@@ -1,7 +1,8 @@
 const MultiplayerGamesServices = require('../services/multiplayerGames.services')
 
 function postMultiplayerGame (req, res) {
-    MultiplayerGamesServices.createMultiplayerGame(req.body)
+    console.log(req.session)
+    MultiplayerGamesServices.createMultiplayerGame(req.body , req.session.user.user_id)
         .then(data => {
             res.status(201).json(data)
         })

@@ -3,7 +3,9 @@ const cookieParser = require('cookie-parser')
 const express = require('express')
 const session = require('express-session')
 const cors = require('cors')
-const helmet = require('helmet')
+const http = require('http')
+const bodyParser = require('body-parser')
+const initializeSocket = require('../socket/socket.js')
 require('dotenv').config()
 
 //  Router imports
@@ -13,6 +15,7 @@ const usersRouter = require('./routes/users.routes.js')
 const puzzlesRouter = require('./routes/puzzles.routes.js')
 const gamesRouter = require('./routes/games.routes.js')
 const multiplayerGamesRouter = require('./routes/multiplayerGames.routes.js')
+const playersRouter = require('./routes/players.routes.js')
 
 // Api settings
 const app = express()
@@ -21,6 +24,7 @@ app.use(cookieParser())
 app.use(session({
   secret: process.env.SESSION_SECRET
 }))
+const server = http.createServer(app)
 
 // Cors settings
 app.use(cors({
@@ -31,6 +35,11 @@ app.use(cors({
 //  Accept json & form-urlencoded
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(bodyParser.json())
+
+// Socket io
+const io = initializeSocket(server)
+io.listen(3000)
 
 // Routes
 app.get('/', (req, res) => {
@@ -46,6 +55,7 @@ app.use('/api/v1/sudokus' , sudokusRouter)
 app.use('/api/v1/users' , usersRouter)
 app.use('/api/v1/games' , gamesRouter)
 app.use('/api/v1/games_vs' , multiplayerGamesRouter)
+app.use('/api/v1/players' , playersRouter)
 
 //  Database connection
 const db = require("../utils/database.js");

@@ -7,6 +7,6 @@ router.route('/')
     .post(authenticateSession , MultiplayerGamesController.postMultiplayerGame)
 
 router.route('/:game_id')
-    .get(authenticateSession , MultiplayerGamesController.getMultiplayerGameById)
+    .get(MultiplayerGamesController.getMultiplayerGameById)
 
 module.exports = router
