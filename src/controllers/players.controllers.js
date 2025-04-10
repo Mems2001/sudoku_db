@@ -37,8 +37,19 @@ function getPlayerIsInList (req , res) {
         })
 }
 
+function patchPlayerById (req, res) {
+    PlayersService.updatePlayerById(req.params.player_id , req.body)
+        .then(data => {
+            res.status(200).json(data)
+        })
+        .catch(err => {
+            res.status(400).json({error: err.message})
+        })
+}
+
 module.exports = {
     postPlayerByUserId,
     getPlayersByGameId,
-    getPlayerIsInList
+    getPlayerIsInList,
+    patchPlayerById
 }

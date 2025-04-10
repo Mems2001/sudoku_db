@@ -60,8 +60,34 @@ async function verifyUserInPlayerList (game_id , user_id) {
     return control
 }
 
+async function updatePlayerById (player_id , {grid , number , status , errors}) {
+    const transaction = await models.sequelize.transaction()
+    try {
+        let player = await models.Players.findOne({where:{id:player_id}})
+        if (player) {
+            let number = player.number
+            if (grid) {
+                number = ''
+                for (let i=0 ; i < 9 ; i++) {
+                    for (let j=0 ; j<9 ; j++) {
+                        number += String(grid[i][j])
+                    }
+                }
+            }
+            await player.update({grid , number , status , errors} , {transaction})
+        }
+
+        await transaction.commit()
+        return player
+    } catch (error) {
+        await transaction.rollback()
+        throw error
+    }
+}
+
 module.exports = {
     createPlayerByUserId,
     findPlayersByGameId,
-    verifyUserInPlayerList
+    verifyUserInPlayerList,
+    updatePlayerById
 }

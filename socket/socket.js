@@ -5,10 +5,13 @@ const { verify } = require("jsonwebtoken");
 const PlayersService = require('../src/services/players.services')
 const MultiplayerGamesService = require('../src/services/multiplayerGames.services')
 
+const timers = {}
+const activeRooms = new Set()
+
 const initializeSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173", 
+      origin: ['http://localhost:5173' , 'https://sudoku21.netlify.app'], 
       methods: ["GET", "POST"],
       credentials: true
     },
@@ -30,10 +33,17 @@ const initializeSocket = (server) => {
 
     socket.on('join-room' , async (game_id) => {
       socket.join(game_id)
+      activeRooms.add(game_id)
       try {
         let players = await PlayersService.findPlayersByGameId(game_id)
         const game = await MultiplayerGamesService.findMultiplayerGameById(game_id)
-        console.log('game status:' , game.status)
+        console.log('game status:' , game?.status)
+        // Timer
+        if (!timers[game_id] && game) {
+          timers[game_id] = {timeElapsed: 0 , interval: null}
+        }
+        socket.emit('game-timer' , timers[game_id].timeElapsed)
+
         let inList = false
         if (user_data) {
           players.forEach(player => {
@@ -46,13 +56,13 @@ const initializeSocket = (server) => {
               }
             }
           })
-          if (game.status === 0) {
+          if (game?.status === 0) {
             if (!inList) {
               const newPlayer = await PlayersService.createPlayerByUserId(user_data.user_id , game_id)
               players = await PlayersService.findPlayersByGameId(game_id)
               socket.emit('player-info' , {player_id: newPlayer.id , isHost:newPlayer.host})
             }
-          } else if (game.status != 0 && !inList) {
+          } else if (game?.status != 0 && !inList) {
             socket.emit('game-alert' , {messsage: 'Sorry, the game has already been started'})
             socket.leave(game_id)
           }
@@ -63,25 +73,60 @@ const initializeSocket = (server) => {
       }
     })
 
-    socket.on('play-game' , async (game_id , bool , time) => {
+    socket.on('play-game' , async (game_id) => {
       socket.join(game_id)
       try {
         await MultiplayerGamesService.updateMultiplayerGame(game_id , {status: 1})
-        console.log('play: ' , bool , time)
-        io.to(game_id).emit('play-game' , {timerOn: bool , time: time})
+        console.log('play')
+        if (timers[game_id] && !timers[game_id].interval) {
+          timers[game_id].interval = setInterval(
+            () => {
+              timers[game_id].timeElapsed += 1
+            }, 1000
+          ) 
+        }
+        io.to(game_id).emit('game-timer' , timers[game_id].timeElapsed)
+        io.to(game_id).emit('play-game' , true)
       } catch (error) {
         console.log(error)
       }
     })
-    socket.on('pause-game' , (game_id , bool) => {
+    socket.on('pause-game' , async (game_id) => {
       socket.join(game_id)
-      console.log('pause' , bool)
-      io.to(game_id).emit('pause-game' , bool)
+      console.log('pause')
+      try {
+        if (timers[game_id] && timers[game_id].interval) {
+          clearInterval(timers[game_id].interval)
+          timers[game_id].interval = null
+          await MultiplayerGamesService.updateMultiplayerGame(game_id, {time: timers[game_id].timeElapsed})
+        }
+        io.to(game_id).emit('pause-game' , false)
+      } catch (error) {
+        console.log(error)
+      }
     })
 
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log("A user disconnected")
+
+      // Checking for empty rooms
+      for (const room of activeRooms) {
+        const sockets = io.sockets.adapter.rooms.get(room);
+    
+        // If the room is empty, delete the timer and remove the room from activeRooms
+        if (!sockets || sockets.size === 0) {
+          try {
+            clearInterval(timers[room]?.interval);
+            delete timers[room];
+            activeRooms.delete(room)
+            console.log(`Timer for room ${room} has been cleared`)
+          } catch (error) {
+            console.log(error)
+          }
+        }
+      }
+
     });
   });
 
