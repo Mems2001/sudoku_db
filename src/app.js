@@ -27,8 +27,8 @@ app.use(session({
   secret: process.env.SESSION_SECRET
 }))
 const server = http.createServer(app)
-const privateKey = fs.readFileSync('key.pem', 'utf8');
-const certificate = fs.readFileSync('cert.pem', 'utf8');
+const privateKey = fs.readFileSync('./key.pem', 'utf8');
+const certificate = fs.readFileSync('./cert.pem', 'utf8');
 const credentials = { key: privateKey, cert: certificate };
 const sserver = https.createServer(credentials, app)
 
