@@ -4,6 +4,7 @@ const express = require('express')
 const session = require('express-session')
 const cors = require('cors')
 const http = require('http')
+const https = require('https')
 const bodyParser = require('body-parser')
 const initializeSocket = require('../socket/socket.js')
 require('dotenv').config()
@@ -25,6 +26,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET
 }))
 const server = http.createServer(app)
+const privateKey = fs.readFileSync('key.pem', 'utf8');
+const certificate = fs.readFileSync('cert.pem', 'utf8');
+const credentials = { key: privateKey, cert: certificate };
+const sserver = https.createServer(credentials, app)
 
 // Cors settings
 app.use(cors({
@@ -39,7 +44,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 
 // Socket io
-const io = initializeSocket(server)
+const io = initializeSocket(sserver)
 io.listen(3000)
 
 // Routes
