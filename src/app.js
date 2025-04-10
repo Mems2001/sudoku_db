@@ -71,8 +71,8 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // Socket io
-const io = initializeSocket(sserver)
-io.listen(8443)
+const io = initializeSocket(server)
+// io.listen(443)
 
 // Routes
 app.get('/', (req, res) => {
@@ -100,5 +100,5 @@ db.sync()
     .then(() => console.log("Database correctly sincronized"))
     .catch((err) => console.log(err))
 
-app.listen(port, () => {
+server.listen(port, () => {
         console.log(`Server on PORT: ${port}`)})
