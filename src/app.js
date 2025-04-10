@@ -46,7 +46,7 @@ app.use(express.urlencoded({ extended: true }))
 
 // Socket io
 const io = initializeSocket(sserver)
-io.listen(3000)
+io.listen(8443)
 
 // Routes
 app.get('/', (req, res) => {
