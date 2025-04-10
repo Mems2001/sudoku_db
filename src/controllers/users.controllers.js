@@ -26,7 +26,7 @@ async function register (req, res) {
         usersServices.createUser(req.body , req.cookies['access-token'])
          .then((user) => {
             req.session.user = null
-            res.clearCookie('access-token')
+            res.delCookie('access-token')
              res.status(201).json(user);
          })
          .catch((error) => {

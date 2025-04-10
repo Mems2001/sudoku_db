@@ -64,7 +64,7 @@ async function login (req, res) {
 
 function logout (req , res) {
     req.session.user = null
-    res.clearCookie('access-token')
+    res.delCookie('access-token')
     res.status(200).json({
         message: "User logged out"
     })
@@ -102,7 +102,7 @@ async function authenticateSession (req ,res) {
                 })
             }  else {
                 req.session.user = null
-                res.clearCookie('access-token')
+                res.delCookie('access-token')
                 res.status(400).json({
                     message: "User doesn't exist"
                 })
@@ -116,7 +116,7 @@ async function authenticateSession (req ,res) {
     } catch (error) {
         console.error(error)
         req.session.user = null
-        res.clearCookie('access-token')
+        res.delCookie('access-token')
         res.status(400).json({
             message: 'Error, not logged in'
         })

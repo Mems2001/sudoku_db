@@ -54,7 +54,7 @@ app.use((req, res, next) => {
     res.cookie(name, value, finalOptions);
   };
 
-  res.clearCookie = (name, options = {}) => {
+  res.delCookie = (name, options = {}) => {
     const defaultOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
