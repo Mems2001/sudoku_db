@@ -46,7 +46,7 @@ app.use(bodyParser.json())
 
 // Socket io
 const io = initializeSocket(sserver)
-io.listen(443)
+// io.listen(443)
 
 // Routes
 app.get('/', (req, res) => {
