@@ -3,6 +3,7 @@ const cookie = require('cookie');
 const { verify } = require("jsonwebtoken");
 
 const PlayersService = require('../src/services/players.services')
+const MultiplayerGamesService = require('../src/services/multiplayerGames.services')
 
 const initializeSocket = (server) => {
   const io = new Server(server, {
@@ -20,22 +21,67 @@ const initializeSocket = (server) => {
     if (cookies) {
       var parsedCookies = cookie.parse(cookies)
       var accessCookie = parsedCookies['access-token']
-      console.log(accessCookie)
+      // console.log(parsedCookies)
+      if (accessCookie) {
+        var user_data = verify(accessCookie , process.env.JWT_SECRET)
+        // console.log(user_data)
+      }
     }
 
     socket.on('join-room' , async (game_id) => {
       socket.join(game_id)
       try {
-        const players = await PlayersService.findPlayersByGameId(game_id)
+        let players = await PlayersService.findPlayersByGameId(game_id)
+        const game = await MultiplayerGamesService.findMultiplayerGameById(game_id)
+        console.log('game status:' , game.status)
+        let inList = false
+        if (user_data) {
+          players.forEach(player => {
+            if (player.user_id === user_data.user_id) {
+              inList = true
+              if (player.host) {
+                socket.emit('player-info' , {player_id:player.id , isHost: true})
+              } else {
+                socket.emit('player-info' , {player_id:player.id , isHost: false})
+              }
+            }
+          })
+          if (game.status === 0) {
+            if (!inList) {
+              const newPlayer = await PlayersService.createPlayerByUserId(user_data.user_id , game_id)
+              players = await PlayersService.findPlayersByGameId(game_id)
+              socket.emit('player-info' , {player_id: newPlayer.id , isHost:newPlayer.host})
+            }
+          } else if (game.status != 0 && !inList) {
+            socket.emit('game-alert' , {messsage: 'Sorry, the game has already been started'})
+            socket.leave(game_id)
+          }
+        }
         io.to(game_id).emit('updated-players' , players)
       } catch (error) {
         console.log(error)
       }
     })
 
+    socket.on('play-game' , async (game_id , bool , time) => {
+      socket.join(game_id)
+      try {
+        await MultiplayerGamesService.updateMultiplayerGame(game_id , {status: 1})
+        console.log('play: ' , bool , time)
+        io.to(game_id).emit('play-game' , {timerOn: bool , time: time})
+      } catch (error) {
+        console.log(error)
+      }
+    })
+    socket.on('pause-game' , (game_id , bool) => {
+      socket.join(game_id)
+      console.log('pause' , bool)
+      io.to(game_id).emit('pause-game' , bool)
+    })
+
     // Handle disconnection
     socket.on("disconnect", () => {
-      console.log("A user disconnected");
+      console.log("A user disconnected")
     });
   });
 

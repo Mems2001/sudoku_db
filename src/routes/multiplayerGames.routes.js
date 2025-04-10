@@ -8,5 +8,6 @@ router.route('/')
 
 router.route('/:game_id')
     .get(MultiplayerGamesController.getMultiplayerGameById)
+    .patch(authenticateSession , MultiplayerGamesController.patchMultiplayerGameById)
 
 module.exports = router

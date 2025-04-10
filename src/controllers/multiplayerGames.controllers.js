@@ -25,7 +25,20 @@ function getMultiplayerGameById (req, res) {
         })
 }
 
+function patchMultiplayerGameById (req , res) {
+    MultiplayerGamesServices.updateMultiplayerGame(req.params.game_id , req.body)
+        .then(data => {
+            res.status(200).json(data)
+        })
+        .catch(err => {
+            res.status(400).json({
+                error: err.message
+            })
+        })
+}
+
 module.exports = {
     postMultiplayerGame,
-    getMultiplayerGameById
+    getMultiplayerGameById,
+    patchMultiplayerGameById
 }

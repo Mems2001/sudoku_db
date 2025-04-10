@@ -49,7 +49,29 @@ async function findMultiplayerGameById (id) {
     })
 }
 
+async function updateMultiplayerGame (game_id , {status , time}) {
+    const transaction = await models.sequelize.transaction()
+    // console.log ('game time:' , time)
+    try {
+        const game = await models.MultiplayerGames.findOne({
+            where: {
+                id: game_id
+            }
+        })
+        const updatedGame = await game.update({
+            status,
+            time
+        })
+
+        return updatedGame
+    } catch (err) {
+        await transaction.rollback()
+        throw err
+    }
+}
+
 module.exports = {
     createMultiplayerGame,
-    findMultiplayerGameById
+    findMultiplayerGameById,
+    updateMultiplayerGame
 }
