@@ -5,7 +5,7 @@ const session = require('express-session')
 const cors = require('cors')
 const logger = require('morgan')
 const http = require('http')
-const https = require('https')
+const https = require('https')  // SSL cetification pending
 const fs = require('fs')
 const initializeSocket = require('../socket/socket.js')
 require('dotenv').config()
@@ -50,8 +50,8 @@ app.use((req, res, next) => {
       maxAge: 1000 * 60 * 60 * 24, // 1 día por defecto
       domain: process.env.NODE_ENV === 'production' ? 'sudoku-db-ip9b.onrender.com' : undefined
     };
-    const finalOptions = { ...defaultOptions, ...options };
-    res.cookie(name, value, finalOptions);
+    const finalOptions = { ...defaultOptions, ...options }
+    res.cookie(name, value, finalOptions)
   };
 
   res.delCookie = (name, options = {}) => {
@@ -62,7 +62,8 @@ app.use((req, res, next) => {
       domain: process.env.NODE_ENV === 'production' ? 'sudoku-db-ip9b.onrender.com' : undefined,
       path:  '/'
     };
-    const finalOptions = { ...defaultOptions, ...options };
+    const finalOptions = { ...defaultOptions, ...options }
+    console.log('Clearing cookie with options:', finalOptions)
     res.clearCookie(name, finalOptions);
   };
 
@@ -75,7 +76,6 @@ app.use(express.urlencoded({ extended: true }))
 
 // Socket io
 const io = initializeSocket(server)
-// io.listen(443)
 
 // Routes
 app.get('/', (req, res) => {
@@ -95,7 +95,6 @@ app.use('/api/v1/players' , playersRouter)
 
 //  Database connection
 const db = require("../utils/database.js");
-const path = require('path')
 
 db.authenticate()
     .then(() => console.log("Database correctly authenticated"))
