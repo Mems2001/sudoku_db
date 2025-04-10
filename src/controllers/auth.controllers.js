@@ -56,7 +56,7 @@ async function login (req, res) {
         res.cookie('access-token', accesToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'none',
+                // sameSite: 'none',
                 maxAge: 1000*60*60*24 // 1 day
             })
         // res.cookie('refresh-token' , refreshToken , {
@@ -81,7 +81,7 @@ function logout (req , res) {
     res.clearCookie('access-token' , {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none'
+        // sameSite: 'none'
     })
     res.status(200).json({
         message: "User logged out"
@@ -141,7 +141,7 @@ async function authenticateSession (req ,res) {
         res.clearCookie('access-token' , {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none'
+            // sameSite: 'none'
         })
         res.status(400).json({
             message: 'Error, not logged in'

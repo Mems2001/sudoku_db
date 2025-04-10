@@ -48,7 +48,7 @@ function getAnon(req , res) {
             res.cookie('access-token' , data.accesToken , {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'none',
+                // sameSite: 'none',
                 maxAge: 1000*60*60*24 // 1 day
             })
             req.session.user = data.user
