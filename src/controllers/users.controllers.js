@@ -41,7 +41,7 @@ async function register (req, res) {
 function getAnon(req , res) {
     usersServices.createAnon()
         .then(data => {
-            res.cookie('access-token' , data.accesToken)
+            res.setCookie('access-token' , data.accesToken)
             req.session.user = data.user
             res.status(201).json({message: 'Anon user'})
         })
