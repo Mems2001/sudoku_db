@@ -3,10 +3,10 @@ const cookieParser = require('cookie-parser')
 const express = require('express')
 const session = require('express-session')
 const cors = require('cors')
+const logger = require('morgan')
 const http = require('http')
 const https = require('https')
 const fs = require('fs')
-const bodyParser = require('body-parser')
 const initializeSocket = require('../socket/socket.js')
 require('dotenv').config()
 
@@ -26,6 +26,7 @@ app.use(cookieParser())
 app.use(session({
   secret: process.env.SESSION_SECRET
 }))
+app.use(logger())
 const server = http.createServer(app)
 const privateKey = fs.readFileSync('./key.pem', 'utf8');
 const certificate = fs.readFileSync('./cert.pem', 'utf8');
@@ -42,11 +43,10 @@ app.use(cors({
 //  Accept json & form-urlencoded
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use(bodyParser.json())
 
 // Socket io
 const io = initializeSocket(sserver)
-// io.listen(443)
+io.listen(3000)
 
 // Routes
 app.get('/', (req, res) => {
