@@ -42,29 +42,15 @@ async function login (req, res) {
                     console.log('Games reassigned')
                     usersServices.deleteUser(data.user_id)
                     req.session.user = null
-                    // res.clearCookie('access-token' , {
-                    // httpOnly: true,
-                    // secure: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development',
-                    // sameSite: 'none'
-                    // })
+                    // Clear cookie here is an option but performance negtive
                 })
                 .catch(error => console.error({error}))
         }
         //JWT generation
         const accesToken = await generateJWT(user.id , user.role_id , '1d');
         // const refreshToken = await generateJWT(user.id , user.role_id , '7 d');
-        res.cookie('access-token', accesToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                // sameSite: 'none',
-                maxAge: 1000*60*60*24 // 1 day
-            })
-        // res.cookie('refresh-token' , refreshToken , {
-        //     httpOnly: true,
-        //         secure: process.env.NODE_ENV === 'production',
-        //         sameSite: 'strict',
-        //         maxAge: 1000*60*60*24*7 // 7 days
-        // })
+        res.setCookie('access-token', accesToken)
+        // res.cookie('refresh-token' , refreshToken)
         res.status(200).json({
                 message: "User logged in"
             })
@@ -78,11 +64,7 @@ async function login (req, res) {
 
 function logout (req , res) {
     req.session.user = null
-    res.clearCookie('access-token' , {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        // sameSite: 'none'
-    })
+    res.clearCookie('access-token')
     res.status(200).json({
         message: "User logged out"
     })
@@ -120,11 +102,7 @@ async function authenticateSession (req ,res) {
                 })
             }  else {
                 req.session.user = null
-                res.clearCookie('access-token' , {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: 'none'
-                })
+                res.clearCookie('access-token')
                 res.status(400).json({
                     message: "User doesn't exist"
                 })
@@ -138,11 +116,7 @@ async function authenticateSession (req ,res) {
     } catch (error) {
         console.error(error)
         req.session.user = null
-        res.clearCookie('access-token' , {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            // sameSite: 'none'
-        })
+        res.clearCookie('access-token')
         res.status(400).json({
             message: 'Error, not logged in'
         })

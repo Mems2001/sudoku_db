@@ -40,6 +40,32 @@ app.use(cors({
   credentials: true
 }))
 
+//Cookies settings
+app.use((req, res, next) => {
+  res.setCookie = (name, value, options = {}) => {
+    const defaultOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Solo en producción
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Configuración para CORS
+      maxAge: 1000 * 60 * 60 * 24 // 1 día por defecto
+    };
+    const finalOptions = { ...defaultOptions, ...options };
+    res.cookie(name, value, finalOptions);
+  };
+
+  res.clearCookie = (name, options = {}) => {
+    const defaultOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    };
+    const finalOptions = { ...defaultOptions, ...options };
+    res.clearCookie(name, finalOptions);
+  };
+
+  next();
+});
+
 //  Accept json & form-urlencoded
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
