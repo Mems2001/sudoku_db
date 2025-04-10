@@ -47,7 +47,8 @@ app.use((req, res, next) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // Solo en producción
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Configuración para CORS
-      maxAge: 1000 * 60 * 60 * 24 // 1 día por defecto
+      maxAge: 1000 * 60 * 60 * 24, // 1 día por defecto
+      domain: process.env.NODE_ENV === 'production' ? 'sudoku-db-ip9b.onrender.com' : undefined
     };
     const finalOptions = { ...defaultOptions, ...options };
     res.cookie(name, value, finalOptions);
@@ -57,7 +58,9 @@ app.use((req, res, next) => {
     const defaultOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      domain: process.env.NODE_ENV === 'production' ? 'sudoku-db-ip9b.onrender.com' : undefined,
+      path:  '/'
     };
     const finalOptions = { ...defaultOptions, ...options };
     res.clearCookie(name, finalOptions);
@@ -92,6 +95,7 @@ app.use('/api/v1/players' , playersRouter)
 
 //  Database connection
 const db = require("../utils/database.js");
+const path = require('path')
 
 db.authenticate()
     .then(() => console.log("Database correctly authenticated"))
