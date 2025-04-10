@@ -1,30 +1,37 @@
-// filepath: socket.js
-const { Server } = require("socket.io");
-const models = require("../models"); // Import your database models
-const uuid = require("uuid");
+const { Server } = require("socket.io")
+const cookie = require('cookie');
+const { verify } = require("jsonwebtoken");
+
+const PlayersService = require('../src/services/players.services')
 
 const initializeSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173", // Allow your React app to connect
-      methods: ["GET", "POST"]
+      origin: "http://localhost:5173", 
+      methods: ["GET", "POST"],
+      credentials: true
     },
   });
 
   // Socket.IO logic
   io.on("connection", (socket) => {
-    console.log("Someone is trying to connect");
-    let players = undefined
-    socket.on('join-room' , data => {
-      if (data.length > 0) {
-        players = data
-        socket.send('User connected')
-      } else {
-        socket.send('No users')
+    console.log("Someone is trying to connect")
+    const cookies = socket.handshake.headers.cookie
+    if (cookies) {
+      var parsedCookies = cookie.parse(cookies)
+      var accessCookie = parsedCookies['access-token']
+      console.log(accessCookie)
+    }
+
+    socket.on('join-room' , async (game_id) => {
+      socket.join(game_id)
+      try {
+        const players = await PlayersService.findPlayersByGameId(game_id)
+        io.to(game_id).emit('updated-players' , players)
+      } catch (error) {
+        console.log(error)
       }
     })
-
-    socket.emit('updated-players' , players)
 
     // Handle disconnection
     socket.on("disconnect", () => {

@@ -6,7 +6,7 @@ const { authenticateSession } = require('../middlewares/session.middleware')
 router.route('/')
 
 router.route('/:game_id')
-    .get(authenticateSession , PlayersController.getPlayersByGameId)
+    .get(PlayersController.getPlayersByGameId)
     .post(authenticateSession , PlayersController.postPlayerByUserId)
 
 router.route('/in_list/:game_id')
