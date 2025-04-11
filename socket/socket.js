@@ -22,11 +22,11 @@ const initializeSocket = (server) => {
     console.log("Someone is trying to connect")
     const cookies = socket.handshake.headers.cookie
     if (cookies) {
-      var parsedCookies = cookie.parse(cookies)
-      var accessCookie = parsedCookies['access-token']
-      // console.log(parsedCookies)
+      const parsedCookies = cookie.parse(cookies)
+      const accessCookie = parsedCookies['access-token']
+      console.log(parsedCookies)
       if (accessCookie) {
-        var user_data = verify(accessCookie , process.env.JWT_SECRET)
+        let user_data = verify(accessCookie , process.env.JWT_SECRET)
         // console.log(user_data)
       }
     }
@@ -35,7 +35,7 @@ const initializeSocket = (server) => {
       socket.join(game_id)
       activeRooms.add(game_id)
       try {
-        let players = await PlayersService.findPlayersByGameId(game_id)
+        const players = await PlayersService.findPlayersByGameId(game_id)
         const game = await MultiplayerGamesService.findMultiplayerGameById(game_id)
         console.log('game status:' , game?.status)
         // Timer
@@ -44,32 +44,35 @@ const initializeSocket = (server) => {
         }
         socket.emit('game-timer' , timers[game_id].timeElapsed)
 
-        let inList = false
-        if (user_data) {
-          players.forEach(player => {
-            if (player.user_id === user_data.user_id) {
-              inList = true
-              if (player.host) {
-                socket.emit('player-info' , {player_id:player.id , isHost: true})
-              } else {
-                socket.emit('player-info' , {player_id:player.id , isHost: false})
-              }
-            }
-          })
-          if (game?.status === 0) {
-            if (!inList) {
-              const newPlayer = await PlayersService.createPlayerByUserId(user_data.user_id , game_id)
-              players = await PlayersService.findPlayersByGameId(game_id)
-              socket.emit('player-info' , {player_id: newPlayer.id , isHost:newPlayer.host})
-            }
-          } else if (game?.status != 0 && !inList) {
-            socket.emit('game-alert' , {messsage: 'Sorry, the game has already been started'})
-            socket.leave(game_id)
-          }
-        }
         io.to(game_id).emit('updated-players' , players)
       } catch (error) {
         console.log(error)
+      }
+    })
+
+    socket.on('create-player' , async (user_id , game_id) => {
+      user_data = {user_id}
+      console.log('A user wants to be a player' , user_data.user_id)
+      try {
+        let existentPlayer = undefined
+        const game = await MultiplayerGamesService.findMultiplayerGameById(game_id)
+        let players = await PlayersService.findPlayersByGameId(game_id)
+        // We check if there already is a Player with that user_id
+        players.forEach(player => {
+          if (player.user_id === user_id) existentPlayer=player
+        })
+        if (!existentPlayer) {
+          // If not, and if the game has not started then we create the player
+          if (game.status === 0) await PlayersService.createPlayerByUserId(user_id , game_id)
+          else socket.emit('game-alert' , {message: 'Sorry, the game has already been started'})
+        } else {
+          socket.emit('player-info' , existentPlayer)
+        }
+        players = await PlayersService.findPlayersByGameId(game_id)
+        io.to(game_id).emit('updated-players' , players)
+      } catch (error) {
+        console.log('Error creating player:' , error)
+        socket.emit('game-alert' , {message: 'Could not create a new player'})
       }
     })
 
@@ -115,15 +118,20 @@ const initializeSocket = (server) => {
           const sockets = io.sockets.adapter.rooms.get(room)
           console.log(sockets , activeRooms)
           socket.send('Disconected')
-          // if (user_data) {
-          //   if (sockets && sockets.has(socket.id)) {
-          //     console.log(`Removing user ${user_data.user_id} from room ${room}`)
-          //   }
-          //   await PlayersService.destroyPlayerByUserIdGameId(user_data.user_id , room)
 
-          //   const players = await PlayersService.findPlayersByGameId(room)
-          //   io.to(room).emit('updated-players' , players)
-          // }
+          if (user_data) {
+            if (sockets && sockets.has(socket.id)) {
+              console.log(`Removing user ${user_data.user_id} from room ${room}`)
+            }
+            const game = await MultiplayerGamesService.findMultiplayerGameById(room)
+
+            if (game.status === 0) {
+              await PlayersService.destroyPlayerByUserIdGameId(user_data.user_id , room)
+            }
+
+            const players = await PlayersService.findPlayersByGameId(room)
+            io.to(room).emit('updated-players' , players)
+          }
       
           // If the room is empty, delete the timer and remove the room from activeRooms
           if (!sockets || sockets.size === 0) {

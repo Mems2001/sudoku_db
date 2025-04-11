@@ -43,7 +43,7 @@ function getAnon(req , res) {
         .then(data => {
             res.setCookie('access-token' , data.accesToken)
             req.session.user = data.user
-            res.status(201).json({message: 'Anon user'})
+            res.status(201).json(data.user)
         })
         .catch(error => {
             res.status(400).json({
