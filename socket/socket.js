@@ -26,7 +26,7 @@ const initializeSocket = (server) => {
       const accessCookie = parsedCookies['access-token']
       console.log(parsedCookies)
       if (accessCookie) {
-        let user_data = verify(accessCookie , process.env.JWT_SECRET)
+        var user_data = verify(accessCookie , process.env.JWT_SECRET)
         // console.log(user_data)
       }
     }
