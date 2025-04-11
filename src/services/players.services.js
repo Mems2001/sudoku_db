@@ -23,6 +23,14 @@ async function createPlayerByUserId (user_id , game_id) {
     }
 }
 
+async function findPlayerByUserId (user_id) {
+    return await models.Players.findOne({
+        where: {
+            user_id
+        }
+    })
+}
+
 async function findPlayersByGameId (game_id) {
     return await models.Players.findAll({
         where: {
@@ -99,6 +107,7 @@ async function destroyPlayerByUserIdGameId (user_id , game_id) {
 
 module.exports = {
     createPlayerByUserId,
+    findPlayerByUserId,
     findPlayersByGameId,
     verifyUserInPlayerList,
     updatePlayerById,

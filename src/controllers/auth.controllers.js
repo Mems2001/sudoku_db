@@ -98,6 +98,7 @@ async function authenticateSession (req ,res) {
                 req.session.user = user
                 res.status(200).json({
                     message: "Session authenticated",
+                    user_id: user.id,
                     role: role.name
                 })
             }  else {

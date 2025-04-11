@@ -30,11 +30,12 @@ const initializeSocket = (server) => {
         // console.log(user_data)
       }
     }
-
+    
     socket.on('join-room' , async (game_id) => {
       socket.join(game_id)
       activeRooms.add(game_id)
       try {
+        const player = await PlayersService.findPlayerByUserId(user_data.user_id)
         const players = await PlayersService.findPlayersByGameId(game_id)
         const game = await MultiplayerGamesService.findMultiplayerGameById(game_id)
         console.log('game status:' , game?.status)
@@ -43,6 +44,8 @@ const initializeSocket = (server) => {
           timers[game_id] = {timeElapsed: 0 , interval: null}
         }
         socket.emit('game-timer' , timers[game_id].timeElapsed)
+
+        if (player) socket.emit('player-info' , {player_id: player.id , isHost: player.host})
 
         io.to(game_id).emit('updated-players' , players)
       } catch (error) {
@@ -63,10 +66,13 @@ const initializeSocket = (server) => {
         })
         if (!existentPlayer) {
           // If not, and if the game has not started then we create the player
-          if (game.status === 0) await PlayersService.createPlayerByUserId(user_id , game_id)
+          if (game.status === 0) {
+            const newPlayer = await PlayersService.createPlayerByUserId(user_id , game_id)
+            socket.emit('player-info' , {player_id: newPlayer.id , isHost: newPlayer.host})
+          }
           else socket.emit('game-alert' , {message: 'Sorry, the game has already been started'})
         } else {
-          socket.emit('player-info' , existentPlayer)
+          socket.emit('player-info' , {player_id: existentPlayer.id , isHost: existentPlayer.host})
         }
         players = await PlayersService.findPlayersByGameId(game_id)
         io.to(game_id).emit('updated-players' , players)
@@ -117,7 +123,6 @@ const initializeSocket = (server) => {
         for (const room of activeRooms) {
           const sockets = io.sockets.adapter.rooms.get(room)
           console.log(sockets , activeRooms)
-          socket.send('Disconected')
 
           if (user_data) {
             if (sockets && sockets.has(socket.id)) {
