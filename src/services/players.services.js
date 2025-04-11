@@ -85,9 +85,22 @@ async function updatePlayerById (player_id , {grid , number , status , errors}) 
     }
 }
 
+async function destroyPlayerByUserIdGameId (user_id , game_id) {
+    const transaction = await models.sequelize.transaction()
+    try {
+        const player = await models.Players.findOne({where: {user_id , game_id}})
+        if (player) await player.destroy({transaction})
+        await transaction.commit()
+    } catch (error) {
+        await transaction.rollback()
+        throw error
+    }
+}
+
 module.exports = {
     createPlayerByUserId,
     findPlayersByGameId,
     verifyUserInPlayerList,
-    updatePlayerById
+    updatePlayerById,
+    destroyPlayerByUserIdGameId
 }

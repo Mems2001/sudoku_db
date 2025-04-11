@@ -107,24 +107,34 @@ const initializeSocket = (server) => {
     })
 
     // Handle disconnection
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log("A user disconnected")
 
-      // Checking for empty rooms
-      for (const room of activeRooms) {
-        const sockets = io.sockets.adapter.rooms.get(room);
-    
-        // If the room is empty, delete the timer and remove the room from activeRooms
-        if (!sockets || sockets.size === 0) {
-          try {
-            clearInterval(timers[room]?.interval);
-            delete timers[room];
-            activeRooms.delete(room)
-            console.log(`Timer for room ${room} has been cleared`)
-          } catch (error) {
-            console.log(error)
+      try {
+        for (const room of activeRooms) {
+          const sockets = io.sockets.adapter.rooms.get(room)
+          console.log(sockets , activeRooms)
+          socket.send('Disconected')
+          // if (user_data) {
+          //   if (sockets && sockets.has(socket.id)) {
+          //     console.log(`Removing user ${user_data.user_id} from room ${room}`)
+          //   }
+          //   await PlayersService.destroyPlayerByUserIdGameId(user_data.user_id , room)
+
+          //   const players = await PlayersService.findPlayersByGameId(room)
+          //   io.to(room).emit('updated-players' , players)
+          // }
+      
+          // If the room is empty, delete the timer and remove the room from activeRooms
+          if (!sockets || sockets.size === 0) {
+              clearInterval(timers[room]?.interval);
+              delete timers[room];
+              activeRooms.delete(room)
+              console.log(`Timer for room ${room} has been cleared`)
+            }
           }
-        }
+      } catch (error) {
+        console.log("Error while disconnection:" , error)
       }
 
     });
