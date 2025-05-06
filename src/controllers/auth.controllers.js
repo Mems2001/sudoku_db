@@ -15,14 +15,16 @@ async function login (req, res) {
             user = await usersServices.findUserByUserName(username);
             if (!user) {
                 return res.status(404).json({
-                    message: "username not found"
+                    message: "username not found",
+                    type: 1
                 });
             }
         } else {
             user = await usersServices.findUserByEmail(email);
             if (!user) {
                 return res.status(404).json({
-                    message: "email not found"
+                    message: "email not found",
+                    type: 1
                 });
             }
         }
@@ -30,7 +32,8 @@ async function login (req, res) {
         const validatePassword = await comparePasswords(password , user.password);
         if (!validatePassword) {
             return res.status(400).json({
-                message: "Wrong password"
+                message: "wrong password",
+                type: 2
             });
         }
         // Anon verification
@@ -52,7 +55,7 @@ async function login (req, res) {
         res.setCookie('access-token', accesToken)
         // res.cookie('refresh-token' , refreshToken)
         res.status(200).json({
-                message: "User logged in"
+                message: "user logged in"
             })
     } catch (error) {
         console.log(error);

@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'user_id',
         as: 'User'
       })
-      Players.belongsTo(models.MultiplayerGames , {
+      Players.belongsTo(models.Games , {
         foreignKey: 'game_id',
         as: 'Game'
       })

@@ -12,6 +12,19 @@ function postPlayerByUserId (req , res) {
         })
 }
 
+function getPlayerByGameId (req , res) {
+    PlayersService.findPlayerByGameId(req.params.game_id , req.session.user.user_id)
+        .then(data => {
+            if (data) res.status(200).json(data)
+            else res.status(404).json({message:'player not found'})
+        })
+        .catch(err => {
+            res.status(400).json({
+                error: err.message
+            })
+        })
+}
+
 function getPlayersByGameId (req, res) {
     PlayersService.findPlayersByGameId(req.params.game_id)
         .then(data => {
@@ -37,8 +50,9 @@ function getPlayerIsInList (req , res) {
         })
 }
 
-function patchPlayerById (req, res) {
-    PlayersService.updatePlayerById(req.params.player_id , req.body)
+function patchPlayerByGameId (req, res) {
+    // console.log(req.params)
+    PlayersService.updatePlayerByGameId(req.params.game_id , req.session.user.user_id, req.body)
         .then(data => {
             res.status(200).json(data)
         })
@@ -49,7 +63,8 @@ function patchPlayerById (req, res) {
 
 module.exports = {
     postPlayerByUserId,
+    getPlayerByGameId,
     getPlayersByGameId,
     getPlayerIsInList,
-    patchPlayerById
+    patchPlayerByGameId
 }

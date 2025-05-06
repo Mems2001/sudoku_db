@@ -11,28 +11,16 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Games.belongsTo(models.Sudokus , {
-        foreignKey: 'sudoku_id',
-        as: 'Sudoku'
-      })
       Games.belongsTo(models.Puzzles , {
         foreignKey: 'puzzle_id',
         as: 'Puzzle'
       })
-      Games.belongsTo(models.Users , {
-        foreignKey: 'user_id',
-        as: 'User'
-      })
     }
   }
   Games.init({
-    userId: DataTypes.UUID,
-    sudokuId: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     puzzleId: DataTypes.UUID,
-    number: DataTypes.STRING,
-    grid: DataTypes.JSON,
     status: DataTypes.INTEGER,
-    errors: DataTypes.INTEGER,
     time: DataTypes.INTEGER,
     // attempts: DataTypes.INTEGER
   }, {

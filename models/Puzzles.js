@@ -18,9 +18,6 @@ module.exports = (sequelize, DataTypes) => {
       Puzzles.hasMany(models.Games , {
         foreignKey: 'puzzle_id'
       })
-      Puzzles.hasMany(models.MultiplayerGames , {
-        foreignKey: 'puzzle_id'
-      })
     }
   }
   Puzzles.init({

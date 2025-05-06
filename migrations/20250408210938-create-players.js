@@ -28,7 +28,7 @@ module.exports = {
           allowNull: false,
           field: 'game_id',
           references: {
-            model: 'multiplayer_games',
+            model: 'games',
             key: 'id'
           },
           onDelete: 'CASCADE',

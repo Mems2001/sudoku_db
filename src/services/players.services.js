@@ -5,14 +5,22 @@ async function createPlayerByUserId (user_id , game_id) {
     const transaction = await models.sequelize.transaction()
 
     try {
-        const game = await models.MultiplayerGames.findOne({where: {id: game_id}})
+        const game = await models.Games.findOne({where: {id: game_id},
+        include: [
+            {
+                model: models.Puzzles,
+                as: 'Puzzle',
+                attributes: ['grid' , 'number']
+            }
+        ]
+        })
 
         const player = await models.Players.create({
             id: uuid.v4(),
             user_id,
             game_id,
-            grid: game.grid,
-            number: game.number
+            grid: game.Puzzle.grid,
+            number: game.Puzzle.number
         } , {transaction})
 
         await transaction.commit()
@@ -28,6 +36,36 @@ async function findPlayerByUserId (user_id) {
         where: {
             user_id
         }
+    })
+}
+
+async function findPlayerByGameId (game_id , user_id) {
+    return await models.Players.findOne({
+        where: {
+            game_id,
+            user_id
+        },
+        include: [
+            {
+                model: models.Games,
+                as: 'Game',
+                attributes: ['status' , 'time' , 'time'],
+                include: [
+                    {
+                        model: models.Puzzles,
+                        as: 'Puzzle',
+                        attributes: ['grid' , 'number'],
+                        include: [
+                            {
+                                model: models.Sudokus,
+                                as: 'Sudoku',
+                                attributes: ['grid' , 'number']
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
     })
 }
 
@@ -68,10 +106,14 @@ async function verifyUserInPlayerList (game_id , user_id) {
     return control
 }
 
-async function updatePlayerById (player_id , {grid , number , status , errors}) {
+async function updatePlayerByGameId (game_id , user_id , {grid, status , errors}) {
     const transaction = await models.sequelize.transaction()
     try {
-        let player = await models.Players.findOne({where:{id:player_id}})
+        let player = await models.Players.findOne({where:{
+            user_id,
+            game_id
+        }})
+        // console.log(player , game_id , user_id)
         if (player) {
             let number = player.number
             if (grid) {
@@ -108,8 +150,9 @@ async function destroyPlayerByUserIdGameId (user_id , game_id) {
 module.exports = {
     createPlayerByUserId,
     findPlayerByUserId,
+    findPlayerByGameId,
     findPlayersByGameId,
     verifyUserInPlayerList,
-    updatePlayerById,
+    updatePlayerByGameId,
     destroyPlayerByUserIdGameId
 }

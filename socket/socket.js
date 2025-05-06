@@ -3,7 +3,7 @@ const cookie = require('cookie');
 const { verify } = require("jsonwebtoken");
 
 const PlayersService = require('../src/services/players.services')
-const MultiplayerGamesService = require('../src/services/multiplayerGames.services')
+const GamesService = require('../src/services/games.services')
 
 const timers = {}
 const activeRooms = new Set()
@@ -37,7 +37,7 @@ const initializeSocket = (server) => {
       try {
         const player = await PlayersService.findPlayerByUserId(user_data.user_id)
         const players = await PlayersService.findPlayersByGameId(game_id)
-        const game = await MultiplayerGamesService.findMultiplayerGameById(game_id)
+        const game = await GamesService.findGameById(game_id)
         console.log('game status:' , game?.status)
         // Timer
         if (!timers[game_id] && game) {
@@ -58,7 +58,7 @@ const initializeSocket = (server) => {
       console.log('A user wants to be a player' , user_data.user_id)
       try {
         let existentPlayer = undefined
-        const game = await MultiplayerGamesService.findMultiplayerGameById(game_id)
+        const game = await GamesService.findGameById(game_id)
         let players = await PlayersService.findPlayersByGameId(game_id)
         // We check if there already is a Player with that user_id
         players.forEach(player => {
@@ -128,7 +128,7 @@ const initializeSocket = (server) => {
             if (sockets && sockets.has(socket.id)) {
               console.log(`Removing user ${user_data.user_id} from room ${room}`)
             }
-            const game = await MultiplayerGamesService.findMultiplayerGameById(room)
+            const game = await GamesService.findGameById(room)
 
             if (game.status === 0) {
               await PlayersService.destroyPlayerByUserIdGameId(user_data.user_id , room)
