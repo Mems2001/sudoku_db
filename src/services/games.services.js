@@ -103,9 +103,26 @@ async function updateGameById(game_id , {status, time}) {
     }
 }
 
+async function destroyGameById (game_id) {
+    const transaction = await models.sequelize.transaction()
+    try {
+        const game = await models.Games.findOne({
+            where: {
+                id: game_id
+            }
+        })
+        await game.destroy({transaction})
+        await transaction.commit()
+    } catch (error) {
+        await transaction.rollback()
+        throw error
+    }
+}
+
 module.exports = {
     createGame,
     findGameById,
     findSavedGames,
-    updateGameById
+    updateGameById,
+    destroyGameById
 }

@@ -60,6 +60,7 @@ const initializeSocket = (server) => {
         let existentPlayer = undefined
         const game = await GamesService.findGameById(game_id)
         let players = await PlayersService.findPlayersByGameId(game_id)
+        console.log("create-player event data:" , game, players)
         // We check if there already is a Player with that user_id
         players.forEach(player => {
           if (player.user_id === user_id) existentPlayer=player
@@ -117,21 +118,24 @@ const initializeSocket = (server) => {
 
     // Handle disconnection
     socket.on("disconnect", async () => {
-      console.log("A user disconnected")
+      console.log("---> a user is disconnecting")
 
       try {
         for (const room of activeRooms) {
+          console.log("romm:" , room)
           const sockets = io.sockets.adapter.rooms.get(room)
           console.log(sockets , activeRooms)
 
           if (user_data) {
-            if (sockets && sockets.has(socket.id)) {
-              console.log(`Removing user ${user_data.user_id} from room ${room}`)
-            }
+            console.log(user_data)
+            console.log(`---> removing user ${user_data.user_id} from room ${room}`)
+            
             const game = await GamesService.findGameById(room)
-
+            
             if (game.status === 0) {
-              await PlayersService.destroyPlayerByUserIdGameId(user_data.user_id , room)
+              await PlayersService.destroyPlayerByUserIdGameId(user_data.user_id , room).then(() => {
+                console.log(`---> user ${user_data.user_id} removed from room ${room}`)
+              })
             }
 
             const players = await PlayersService.findPlayersByGameId(room)
@@ -140,10 +144,12 @@ const initializeSocket = (server) => {
       
           // If the room is empty, delete the timer and remove the room from activeRooms
           if (!sockets || sockets.size === 0) {
-              clearInterval(timers[room]?.interval);
-              delete timers[room];
-              activeRooms.delete(room)
-              console.log(`Timer for room ${room} has been cleared`)
+              await GamesService.destroyGameById(room).then(() => {
+                clearInterval(timers[room]?.interval);
+                delete timers[room];
+                activeRooms.delete(room)
+                console.log(`---> game ${room} has been deleted, timer for room ${room} has been cleared`)
+              })
             }
           }
       } catch (error) {

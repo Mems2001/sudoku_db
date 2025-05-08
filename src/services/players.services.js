@@ -40,6 +40,7 @@ async function findPlayerByUserId (user_id) {
 }
 
 async function findPlayerByGameId (game_id , user_id) {
+    // console.log('---> params in findPlayerByGameId:' , game_id , user_id)
     return await models.Players.findOne({
         where: {
             game_id,
