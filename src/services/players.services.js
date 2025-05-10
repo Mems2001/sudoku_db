@@ -1,7 +1,7 @@
 const models = require('../../models')
 const uuid = require('uuid')
 
-async function createPlayerByUserId (user_id , game_id) {
+async function createPlayerByUserId (user_id, game_id, {is_connected}) {
     const transaction = await models.sequelize.transaction()
 
     try {
@@ -20,7 +20,8 @@ async function createPlayerByUserId (user_id , game_id) {
             user_id,
             game_id,
             grid: game.Puzzle.grid,
-            number: game.Puzzle.number
+            number: game.Puzzle.number,
+            isConnected: is_connected
         } , {transaction})
 
         await transaction.commit()
@@ -85,6 +86,22 @@ async function findPlayersByGameId (game_id) {
     })
 }
 
+async function findConnectedPlayersByGameId (game_id) {
+    return await models.Players.findAll({
+        where: {
+            game_id,
+            isConnected: true
+        },
+        include: [
+            {
+                model: models.Users,
+                as: 'User',
+                attributes: ['username']
+            }
+        ]
+    })
+}
+
 async function verifyUserInPlayerList (game_id , user_id) {
     const playersList = await models.Players.findAll({
         where: {
@@ -107,7 +124,7 @@ async function verifyUserInPlayerList (game_id , user_id) {
     return control
 }
 
-async function updatePlayerByGameId (game_id , user_id , {grid, status , errors}) {
+async function updatePlayerByGameId (game_id , user_id , {grid, status , errors, is_connected}) {
     const transaction = await models.sequelize.transaction()
     try {
         let player = await models.Players.findOne({where:{
@@ -125,7 +142,7 @@ async function updatePlayerByGameId (game_id , user_id , {grid, status , errors}
                     }
                 }
             }
-            await player.update({grid , number , status , errors} , {transaction})
+            await player.update({grid , number , status , errors, isConnected:is_connected} , {transaction})
         }
 
         await transaction.commit()
@@ -153,6 +170,7 @@ module.exports = {
     findPlayerByUserId,
     findPlayerByGameId,
     findPlayersByGameId,
+    findConnectedPlayersByGameId,
     verifyUserInPlayerList,
     updatePlayerByGameId,
     destroyPlayerByUserIdGameId

@@ -30,6 +30,7 @@ async function createGame({puzzle_id , gameType} , user_id) {
             game_id: game.id,
             grid,
             number,
+            isConnected: true,
             host
         } , {transaction})
 

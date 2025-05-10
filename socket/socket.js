@@ -28,24 +28,38 @@ const initializeSocket = (server) => {
       if (accessCookie) {
         var user_data = verify(accessCookie , process.env.JWT_SECRET)
         // console.log(user_data)
+      } else {
+        var user_data = undefined
       }
     }
     
+    /**
+     * This is the general room creation and joining logic. It also controls the acces of validated players to the game data. Keep in mind that joining a room and joining a game are different operations.
+     * @params game_id - id that allows us to control access to the game data in the front-end, sending back player-info as validation.
+     */
     socket.on('join-room' , async (game_id) => {
+      //Anyone can join the room, but only verified players can access to the game-info. User validation code is declared in the front-end, in VsGame.tsx. This logic will always create a new room and timer, since there will always be a validated player to be the first who joins, the host. This condition is sustained in the front-end logic, in the new game button.
       socket.join(game_id)
       activeRooms.add(game_id)
       try {
-        const player = await PlayersService.findPlayerByUserId(user_data.user_id)
-        const players = await PlayersService.findPlayersByGameId(game_id)
+        if (user_data) {
+          var player = await PlayersService.findPlayerByUserId(user_data.user_id)
+        }
+        const players = await PlayersService.findConnectedPlayersByGameId(game_id)
         const game = await GamesService.findGameById(game_id)
-        console.log('game status:' , game?.status)
+        console.log('---> game status:' , game?.status)
         // Timer
         if (!timers[game_id] && game) {
-          timers[game_id] = {timeElapsed: 0 , interval: null}
+          timers[game_id] = {timeElapsed: game.time , interval: null}
         }
+        console.log('---> timer set:' , timers[game_id].timeElapsed)
         socket.emit('game-timer' , timers[game_id].timeElapsed)
 
-        if (player) socket.emit('player-info' , {player_id: player.id , isHost: player.host})
+        //If we don't find a verified player and send back validated player info then the user can not access to the game-info, so, can not join the game. However, for this to happen anyone must be able to join the room since the socket logic is in charge on both getting player info or creating new players if it is the case.
+        if (player) {
+          if (!player.is_connected) await PlayersService.updatePlayerByGameId(game_id, user_data.user_id, {is_connected:true})
+          socket.emit('player-info' , {player_id: player.id , isHost: player.host})
+        }
 
         io.to(game_id).emit('updated-players' , players)
       } catch (error) {
@@ -68,14 +82,15 @@ const initializeSocket = (server) => {
         if (!existentPlayer) {
           // If not, and if the game has not started then we create the player
           if (game.status === 0) {
-            const newPlayer = await PlayersService.createPlayerByUserId(user_id , game_id)
+            const newPlayer = await PlayersService.createPlayerByUserId(user_id , game_id, {is_connected:true})
             socket.emit('player-info' , {player_id: newPlayer.id , isHost: newPlayer.host})
           }
           else socket.emit('game-alert' , {message: 'Sorry, the game has already been started'})
         } else {
+          await PlayersService.updatePlayerByGameId(game_id, user_id, {is_connected:true})
           socket.emit('player-info' , {player_id: existentPlayer.id , isHost: existentPlayer.host})
         }
-        players = await PlayersService.findPlayersByGameId(game_id)
+        players = await PlayersService.findConnectedPlayersByGameId(game_id)
         io.to(game_id).emit('updated-players' , players)
       } catch (error) {
         console.log('Error creating player:' , error)
@@ -84,10 +99,10 @@ const initializeSocket = (server) => {
     })
 
     socket.on('play-game' , async (game_id) => {
+      // console.log('---> starting game')
       socket.join(game_id)
       try {
-        await MultiplayerGamesService.updateMultiplayerGame(game_id , {status: 1})
-        console.log('play')
+        await GamesService.updateGameById(game_id , {status: 1})
         if (timers[game_id] && !timers[game_id].interval) {
           timers[game_id].interval = setInterval(
             () => {
@@ -95,6 +110,7 @@ const initializeSocket = (server) => {
             }, 1000
           ) 
         }
+        console.log('---> game started:' , timers[game_id].timeElapsed)
         io.to(game_id).emit('game-timer' , timers[game_id].timeElapsed)
         io.to(game_id).emit('play-game' , true)
       } catch (error) {
@@ -103,12 +119,12 @@ const initializeSocket = (server) => {
     })
     socket.on('pause-game' , async (game_id) => {
       socket.join(game_id)
-      console.log('pause')
+      console.log('---> game paused')
       try {
         if (timers[game_id] && timers[game_id].interval) {
           clearInterval(timers[game_id].interval)
           timers[game_id].interval = null
-          await MultiplayerGamesService.updateMultiplayerGame(game_id, {time: timers[game_id].timeElapsed})
+          await GamesService.updateGameById(game_id, {time: timers[game_id].timeElapsed})
         }
         io.to(game_id).emit('pause-game' , false)
       } catch (error) {
@@ -120,38 +136,48 @@ const initializeSocket = (server) => {
     socket.on("disconnect", async () => {
       console.log("---> a user is disconnecting")
 
+      //We'll delete the player if the game has been started or delete the game if there are no more players connected to it. In anycase, the function will always try to simply remove the player (socket) from the correpsonding room.
       try {
         for (const room of activeRooms) {
           console.log("romm:" , room)
           const sockets = io.sockets.adapter.rooms.get(room)
           console.log(sockets , activeRooms)
+          const game = await GamesService.findGameById(room)
+          console.log('---> game found')
 
           if (user_data) {
             console.log(user_data)
             console.log(`---> removing user ${user_data.user_id} from room ${room}`)
-            
-            const game = await GamesService.findGameById(room)
-            
-            if (game.status === 0) {
-              await PlayersService.destroyPlayerByUserIdGameId(user_data.user_id , room).then(() => {
-                console.log(`---> user ${user_data.user_id} removed from room ${room}`)
-              })
+
+            //We check if the game has not started yet (game.status === 0), if so, the player table can be deleted, if not, can't be deleted.
+            const player = await PlayersService.findPlayerByUserId(user_data.user_id)
+            if (game && game.status === 0) {
+              await PlayersService.destroyPlayerByUserIdGameId(user_data.user_id , room)
+              console.log(`---> player ${player.id} removed from room ${room}, and deleted.`)
+            } else {
+              await PlayersService.updatePlayerByGameId(room, user_data.user_id, {is_connected:false})
+              console.log(`---> player ${player.id} removed from room ${room}, player status updated.`)
             }
 
-            const players = await PlayersService.findPlayersByGameId(room)
+            const players = await PlayersService.findConnectedPlayersByGameId(room)
             io.to(room).emit('updated-players' , players)
           }
       
-          // If the room is empty, delete the timer and remove the room from activeRooms
+          // If the room is empty, delete the timer and remove the room from activeRooms and delete the game table
           if (!sockets || sockets.size === 0) {
-              await GamesService.destroyGameById(room).then(() => {
-                clearInterval(timers[room]?.interval);
-                delete timers[room];
-                activeRooms.delete(room)
-                console.log(`---> game ${room} has been deleted, timer for room ${room} has been cleared`)
-              })
+            //We check if the game has been started, if so, we'll keep the game table for player's statistics purposes.
+            clearInterval(timers[room].interval)
+            timers[room].interval = null
+            delete timers[room]
+            console.log(`---> timer for room ${room} has been deleted.`)
+            if (game && game.status === 0) {
+              await GamesService.destroyGameById(room)
+              console.log(`---> game ${room} has been deleted.`)
             }
+            activeRooms.delete(room)
+            console.log(`---> room ${room} is no longer active.`)
           }
+        }
       } catch (error) {
         console.log("Error while disconnection:" , error)
       }

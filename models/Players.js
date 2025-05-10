@@ -28,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
     number: DataTypes.STRING,
     errors: DataTypes.INTEGER,
     status: DataTypes.INTEGER,
+    isConnected: DataTypes.BOOLEAN,
     host: DataTypes.BOOLEAN
   }, {
     sequelize,
