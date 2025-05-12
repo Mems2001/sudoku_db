@@ -47,7 +47,6 @@ async function login (req, res) {
                     req.session.user = null
                     // Clear cookie here is an option but performance negtive
                 })
-                .catch(error => console.error({error}))
         }
         //JWT generation
         const accesToken = await generateJWT(user.id , user.role_id , '1d');

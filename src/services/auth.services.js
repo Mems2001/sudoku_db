@@ -1,10 +1,15 @@
 const models = require('../../models')
 
+/**
+ * Whenever a user is trying to log in, but previously he was using an anon user profile, the players tables related to it need to be reasigned to its non anon user profile.
+ * @param {*} anon_id 
+ * @param {*} user_id 
+ */
 async function reasignGames (anon_id , user_id) {
     const transaction = await models.sequelize.transaction()
 
     try {
-        const games = await models.Games.findAll({
+        const games = await models.Players.findAll({
             where: {
                 user_id: anon_id
             }

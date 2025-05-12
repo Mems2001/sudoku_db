@@ -45,7 +45,6 @@ const initializeSocket = (server) => {
         if (user_data) {
           var player = await PlayersService.findPlayerByUserId(user_data.user_id)
         }
-        const players = await PlayersService.findConnectedPlayersByGameId(game_id)
         const game = await GamesService.findGameById(game_id)
         console.log('---> game status:' , game?.status)
         // Timer
@@ -61,6 +60,7 @@ const initializeSocket = (server) => {
           socket.emit('player-info' , {player_id: player.id , isHost: player.host})
         }
 
+        const players = await PlayersService.findConnectedPlayersByGameId(game_id)
         io.to(game_id).emit('updated-players' , players)
       } catch (error) {
         console.log(error)
