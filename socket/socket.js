@@ -62,6 +62,7 @@ const initializeSocket = (server) => {
 
         const players = await PlayersService.findConnectedPlayersByGameId(game_id)
         io.to(game_id).emit('updated-players' , players)
+        socket.broadcast.emit('pause-game', false) //In case an authenticaed player is trying to join an on going game, the game will be paused for everyone as soon as he joins.
       } catch (error) {
         console.log(error)
       }
