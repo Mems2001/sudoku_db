@@ -39,6 +39,18 @@ function getPlayersByGameId (req, res) {
         })
 }
 
+function getConnectedPlayersByGameId (req, res) {
+    PlayersService.findConnectedPlayersByGameId(req.params.game_id)
+        .then(data => {
+            res.status(200).json(data)
+        })
+        .catch(err => {
+            res.status(400).json({
+                error: err.message
+            })
+        })
+}
+
 function getPlayerIsInList (req , res) {
     PlayersService.verifyUserInPlayerList(req.params.game_id , req.session.user.user_id)
         .then(data => {
@@ -67,6 +79,7 @@ module.exports = {
     postPlayerByUserId,
     getPlayerByGameId,
     getPlayersByGameId,
+    getConnectedPlayersByGameId,
     getPlayerIsInList,
     patchPlayerByGameId
 }

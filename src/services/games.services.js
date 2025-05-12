@@ -1,7 +1,7 @@
 const models = require('../../models')
 const uuid = require('uuid')
 
-async function createGame({puzzle_id , gameType} , user_id) {
+async function createGame({puzzle_id , gameType, status} , user_id) {
     const transaction = await models.sequelize.transaction()
 
     try {
@@ -21,7 +21,8 @@ async function createGame({puzzle_id , gameType} , user_id) {
         const game = await models.Games.create({
             id: uuid.v4(),
             type: gameType,
-            puzzle_id
+            puzzle_id,
+            status: status || 0
         } , {transaction})
 
         await models.Players.create({

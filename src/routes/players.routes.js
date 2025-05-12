@@ -8,7 +8,7 @@ router.route('/single/:game_id')
     .patch(authenticateSession , PlayersController.patchPlayerByGameId)
 
 router.route('/multi/:game_id')
-    .get(PlayersController.getPlayersByGameId)
+    .get(PlayersController.getConnectedPlayersByGameId)
     .post(authenticateSession , PlayersController.postPlayerByUserId)
 
 router.route('/in_list/:game_id')

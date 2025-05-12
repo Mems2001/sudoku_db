@@ -31,7 +31,7 @@ module.exports = {
         status: {
           type: Sequelize.INTEGER,
           allowNull: false,
-          defaultValue: 0 // 0 -> unsolved , 1 -> solved , 2 -> failed  
+          defaultValue: 0 // 0 -> not started , 1 -> started , 2 -> finished  
         },
         time: {
           type: Sequelize.INTEGER,

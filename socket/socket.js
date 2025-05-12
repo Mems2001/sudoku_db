@@ -166,8 +166,10 @@ const initializeSocket = (server) => {
           // If the room is empty, delete the timer and remove the room from activeRooms and delete the game table
           if (!sockets || sockets.size === 0) {
             //We check if the game has been started, if so, we'll keep the game table for player's statistics purposes.
-            clearInterval(timers[room].interval)
-            timers[room].interval = null
+            if (timers[room].interval) {
+              clearInterval(timers[room].interval)
+              timers[room].interval = null
+            }
             delete timers[room]
             console.log(`---> timer for room ${room} has been deleted.`)
             if (game && game.status === 0) {
