@@ -25,7 +25,7 @@ app.use(cookieParser())
 app.use(session({
   secret: process.env.SESSION_SECRET
 }))
-// app.use(logger())
+app.use(logger())
 const server = http.createServer(app)
 const privateKey = fs.readFileSync('./key.pem', 'utf8');
 const certificate = fs.readFileSync('./cert.pem', 'utf8');
