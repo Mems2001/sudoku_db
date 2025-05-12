@@ -73,6 +73,10 @@ function logout (req , res) {
     })
 }
 
+/**
+ * This function is in charge of verify is the user session is valid, using an "access-token" cookie.
+ * @return If the authentication succeeds, it returns the user's id and role. Otherwise it deletes the cookie if it exists.
+ */
 async function authenticateSession (req ,res) {
     const cookie = req.cookies['access-token']
     console.log(cookie)
