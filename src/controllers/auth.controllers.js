@@ -5,6 +5,15 @@ const { comparePasswords } = require('../../utils/bcrypt')
 const { generateJWT } = require('../../utils/generate-jwt')
 const {verify} = require('jsonwebtoken')
 
+/**
+ * The login process first checks if the user exists. Then, verifies the password. But then it runs the anon verification process. Which is code that identifies if the user that's trying to log in was using an anon user. If so, it transfers all the games played as anon to the user profile and finally deletes the anon user. Only then it sets the jwt 'access-token' cookie.
+ * @param {*} req.body The body request object that conteins the following props:
+ * @property useUsername - A boolean that informs us if the user is trying to login with his userName (true) or email (false)
+ * @property username
+ * @property email
+ * @property password
+ * @returns 
+ */
 async function login (req, res) {
     const {useUsername , username , email , password} = req.body
 
@@ -73,7 +82,7 @@ function logout (req , res) {
 }
 
 /**
- * This function is in charge of verify is the user session is valid, using an "access-token" cookie.
+ * This function is in charge of verify is the user session is valid, using an "access-token" cookie. IF so, ir returns his id, role, and game settings
  * @return If the authentication succeeds, it returns the user's id and role. Otherwise it deletes the cookie if it exists.
  */
 async function authenticateSession (req ,res) {
@@ -99,13 +108,22 @@ async function authenticateSession (req ,res) {
                     id: data.role_id
                 }
             })
-    
+            const gameSettings = await models.GameSettings.findOne({
+                where: {
+                    user_id: data.user_id
+                }
+            })
+
             if (role && user) {
                 req.session.user = user
                 res.status(200).json({
                     message: "Session authenticated",
                     user_id: user.id,
-                    role: role.name
+                    role: role.name,
+                    settings: {
+                        cells_highlight: gameSettings.cells_highlight,
+                        numbers_highlight: gameSettings.numbers_highlight
+                    }
                 })
             }  else {
                 req.session.user = null

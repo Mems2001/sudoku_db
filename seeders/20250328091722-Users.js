@@ -27,18 +27,27 @@ module.exports = {
     //    console.log(admin)
     
        const users = [
-        {
-        id: uuid.v4(),
-        username: 'mems2001',
-        email: 'mems2001code@gmail.com',
-        password: hashPassword('mems200195'),
-        role_id: admin.id,
-        created_at: new Date(),
-        updated_at: new Date()
-       }
-    ]
+            {
+                id: uuid.v4(),
+                username: 'mems2001',
+                email: 'mems2001code@gmail.com',
+                password: hashPassword('mems200195'),
+                role_id: admin.id,
+                created_at: new Date(),
+                updated_at: new Date()
+            }
+        ]
+        const settings = [
+            {
+                id: uuid.v4(),
+                user_id: users[0].id,
+                created_at: new Date(),
+                updated_at: new Date()
+            }
+        ]
 
        await queryInterface.bulkInsert('users' , users , {transaction})
+       await queryInterface.bulkInsert('game_settings' , settings , {transaction})
 
        await transaction.commit()
    } catch(error) {
@@ -63,6 +72,11 @@ module.exports = {
                 name: 'admin'
             }
         })
+        await queryInterface.bulkDelete('game_settings' , {
+            id: {
+                [Op.ne]: undefined 
+            }
+        }, {transaction})
         await queryInterface.bulkDelete('users' , {
             role_id: {
                 [Op.eq] : admin.id
