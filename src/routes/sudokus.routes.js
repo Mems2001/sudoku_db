@@ -7,7 +7,7 @@ router.route('/')
     .get(sudokuControlles.getAllSudokus)
 
 router.route('/get_random')
-        .get(authenticateSession , sudokuControlles.getRandomSudoku)
+    .get(authenticateSession , sudokuControlles.getRandomSudoku)
         
 router.route('/:id')
     .get(sudokuControlles.getSudokuById)

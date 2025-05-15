@@ -9,7 +9,7 @@ async function register (req, res) {
     if (user) {
         errorControl = true
         res.status(403).json({
-            message: "User with this username already exists"
+            message: "user with this username already exists"
         });
     }
 
@@ -18,7 +18,7 @@ async function register (req, res) {
     if (user && !errorControl) {
         errorControl = true
         res.status(403).json({
-            message: "User with this email already exists"
+            message: "user with this email already exists"
         });
     }
 
@@ -32,7 +32,7 @@ async function register (req, res) {
          .catch((error) => {
              console.log(error);
              res.status(400).json({
-                 message: "Something went wrong, talk to any administrator"
+                 message: "something went wrong, talk to any administrator"
              });
          });
     }
@@ -52,7 +52,20 @@ function getAnon(req , res) {
         })
 }
 
+function patchGameSettings(req , res) {
+    usersServices.updateGameSettingsByUserId(req.body, req.session.user.user_id)
+        .then(data => {
+            res.status(201).json(data)
+        })
+        .catch(error => {
+            res.status(400).json({
+                error: error.message
+            })
+        })
+}
+
  module.exports = {
         register,
-        getAnon
+        getAnon,
+        patchGameSettings
     }

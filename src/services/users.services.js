@@ -47,6 +47,9 @@ async function createUser ({username , email , password} , id) {
                 role_id: userRole.id,
                 password: hashPassword(password)
             }, { transaction })
+            await models.GameSettings.create({
+                id: uuid.v4()
+            },{transaction})
         }
         await transaction.commit()
         return newUser
@@ -99,10 +102,34 @@ async function deleteUser(id) {
     }
 }
 
+async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight}, user_id) {
+    const transaction = await models.sequelize.transaction()
+
+    try {
+        const gameSettings = await models.GameSettings.findOne({
+            where:{
+                user_id
+            }
+        })
+        await gameSettings.update({
+            cellsHighlight,
+            numbersHighlight
+        }, {transaction})
+
+        await transaction.commit()
+
+        return gameSettings
+    } catch (error) {
+        await transaction.rollback()
+        throw error
+    }
+}
+
 module.exports = {
     findUserByUserName,
     createUser,
     findUserByEmail,
     createAnon,
-    deleteUser
+    deleteUser,
+    updateGameSettingsByUserId
 }
