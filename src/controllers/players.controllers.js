@@ -52,6 +52,7 @@ function getConnectedPlayersByGameId (req, res) {
 }
 
 function getPlayerIsInList (req , res) {
+    console.log('Is this user in list?' , req.session.user)
     PlayersService.verifyUserInPlayerList(req.params.game_id , req.session.user.user_id)
         .then(data => {
             if (data) res.status(200).json(data)

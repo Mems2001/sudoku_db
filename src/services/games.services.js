@@ -14,7 +14,7 @@ async function createGame({puzzle_id , gameType, status} , user_id) {
         const number = puzzle.number
         const grid = puzzle.grid
         let host = false
-        if (gameType === 1) {
+        if (gameType != 0) {
             host = true
         }
 

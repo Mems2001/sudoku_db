@@ -15,7 +15,7 @@ module.exports = {
         type: {
           type: Sequelize.INTEGER,
           allowNull: false,
-          defaultValue: 0 // 0 -> single player; 1 -> multiplayer
+          defaultValue: 0 // 0 -> single player; 1 -> vs time attack; 2 -> coopertive
         },
         puzzleId: {
           type: Sequelize.UUID,

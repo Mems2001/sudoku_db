@@ -115,15 +115,15 @@ async function authenticateSession (req ,res) {
             })
             // console.log('game_settings:' , gameSettings)
 
-            if (role && user && gameSettings) {
+            if (role && user) {
                 req.session.user = user
                 res.status(200).json({
                     message: "Session authenticated",
                     user_id: user.id,
                     role: role.name,
                     settings: {
-                        cells_highlight: gameSettings.cellsHighlight,
-                        numbers_highlight: gameSettings.numbersHighlight
+                        cells_highlight: gameSettings? gameSettings.cellsHighlight: true,
+                        numbers_highlight: gameSettings? gameSettings.numbersHighlight: true
                     }
                 })
             }  else {

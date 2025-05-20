@@ -118,6 +118,7 @@ async function verifyUserInPlayerList (game_id , user_id) {
 
     let control = false
     playersList.forEach(player => {
+        console.log('---> ids comparisson:', player.user_id , user_id)
         if (player.user_id === user_id) control = true
     });
 
@@ -127,10 +128,11 @@ async function verifyUserInPlayerList (game_id , user_id) {
  * This service is in charge of the principal player's fields updates, such as the grid, status, number or errors, them corresponding to the puzzle solvig progression and status. But also, it allows us to update the status at the relating game's table when there is a winner or when the game has failed (all related players failed the game).
  * @param {*} game_id - The unique game's table identifier of which the user is a player.
  * @param {*} user_id - The unique user's table identifier, which links one user to one player.
- * @param {*} param2 - An object containing the main puzzle solving data, such as grid (array<array<integer>>), status (integer), errors (integer), and is_connected (boolean).
+ * @param {*} param2 - An object containing the main puzzle solving data, such as grid (array<array<integer>>), status (integer), errors (integer), is_connected (boolean) and gameType (integer).
  * @returns The updated player data.
  */
-async function updatePlayerByGameId (game_id , user_id , {grid, number, status , errors, is_connected}) {
+async function updatePlayerByGameId (game_id , user_id , {grid, number, status , errors, is_connected, gameType}) {
+    console.log('---> data for user updating:' , 'game id:' , game_id)
     const transaction = await models.sequelize.transaction()
     try {
         let player = await models.Players.findOne({where:{
@@ -170,7 +172,7 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, status ,
                     if (player.status === 2) control += 1
                 }
                 console.log('players length:', players.length , 'players with status 2:', control)
-                //We declared the game as finished in this case only when all the connected players lost the game.
+                //We declared the game as finished in this case only when all the connected players have lost the game.
                 if (control === players.length) await game.update({status:2} , {transaction})
                 break
         }
