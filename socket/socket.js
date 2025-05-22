@@ -19,7 +19,7 @@ const initializeSocket = (server) => {
 
   // Socket.IO logic
   io.on("connection", (socket) => {
-    console.log("Someone is trying to connect")
+    console.log("---> Someone is trying to connect")
     const cookies = socket.handshake.headers.cookie
     if (cookies) {
       const parsedCookies = cookie.parse(cookies)
@@ -39,11 +39,13 @@ const initializeSocket = (server) => {
      */
     socket.on('join-room' , async (game_id) => {
       //Anyone can join the room, but only verified players can access to the game-info. User validation code is declared in the front-end, in VsGame.tsx. This logic will always create a new room and timer, since there will always be a validated player to be the first who joins, the host. This condition is sustained in the front-end logic, in the new game button.
+      console.log('---> joning the room', game_id)
       socket.join(game_id)
       activeRooms.add(game_id)
       try {
         if (user_data) {
           var player = await PlayersService.findPlayerByUserId(user_data.user_id)
+          console.log('---> player found:', player.id)
         }
         const game = await GamesService.findGameById(game_id)
         console.log('---> game status:' , game?.status)
@@ -158,29 +160,46 @@ const initializeSocket = (server) => {
             console.log(user_data)
             console.log(`---> removing user ${user_data.user_id} from room ${room}`)
 
-            //We check if the game has not started yet (game.status === 0), if so, the player table can be deleted, if not, can't be deleted.
             const player = await PlayersService.findPlayerByUserId(user_data.user_id)
+            //Host reasignation process.
+            if (player.host && game.status != 2) {
+              var players = await PlayersService.findConnectedPlayersByGameId(room)
+              for (let player of players) {
+                if (player.user_id != user_data.user_id) {
+                  await PlayersService.updatePlayerByGameId(room, player.user_id, {host:true})
+                  socket.broadcast.emit('new-host', player.id)
+                  console.log('---> host reasigned')
+                  break
+                }
+              }
+            }
+
+            //We check if the game has not started yet (game.status === 0), if so, the player table can be deleted, if not, can't be deleted.
             if (game && game.status === 0) {
               await PlayersService.destroyPlayerByUserIdGameId(user_data.user_id , room)
               console.log(`---> player ${player.id} removed from room ${room}, and deleted.`)
             } else {
-              await PlayersService.updatePlayerByGameId(room, user_data.user_id, {is_connected:false})
+              let host = undefined
+              if (players && players.length > 1) {
+                host = false
+              }
+              await PlayersService.updatePlayerByGameId(room, user_data.user_id, {is_connected:false, host})
               console.log(`---> player ${player.id} removed from room ${room}, player status updated.`)
             }
 
-            const players = await PlayersService.findConnectedPlayersByGameId(room)
+            players = await PlayersService.findConnectedPlayersByGameId(room)
             io.to(room).emit('updated-players' , players)
           }
       
           // If the room is empty, delete the timer and remove the room from activeRooms and delete the game table
           if (!sockets || sockets.size === 0) {
-            //We check if the game has been started, if so, we'll keep the game table for player's statistics purposes.
             if (timers[room]?.interval) {
               clearInterval(timers[room].interval)
               timers[room].interval = null
             }
             delete timers[room]
             console.log(`---> timer for room ${room} has been deleted.`)
+            //We check if the game has been started, if so, we'll keep the game table for player's statistics purposes.
             if (game && game.status === 0) {
               await GamesService.destroyGameById(room)
               console.log(`---> game ${room} has been deleted.`)

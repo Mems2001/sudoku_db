@@ -102,7 +102,7 @@ async function findConnectedPlayersByGameId (game_id) {
     })
 }
 
-async function verifyUserInPlayerList (game_id , user_id) {
+async function verifyUserOnPlayerList (game_id , user_id) {
     const playersList = await models.Players.findAll({
         where: {
             game_id
@@ -118,7 +118,7 @@ async function verifyUserInPlayerList (game_id , user_id) {
 
     let control = false
     playersList.forEach(player => {
-        console.log('---> ids comparisson:', player.user_id , user_id)
+        console.log('---> ids comparisson:', 'player in list:', player.user_id , 'user:', user_id)
         if (player.user_id === user_id) control = true
     });
 
@@ -131,7 +131,7 @@ async function verifyUserInPlayerList (game_id , user_id) {
  * @param {*} param2 - An object containing the main puzzle solving data, such as grid (array<array<integer>>), status (integer), errors (integer), is_connected (boolean) and gameType (integer).
  * @returns The updated player data.
  */
-async function updatePlayerByGameId (game_id , user_id , {grid, number, status , errors, is_connected, gameType}) {
+async function updatePlayerByGameId (game_id , user_id , {grid, number, status , errors, is_connected, host}) {
     console.log('---> data for user updating:' , 'game id:' , game_id)
     const transaction = await models.sequelize.transaction()
     try {
@@ -143,7 +143,7 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, status ,
         if (player) {
             let status2 = status
             if (status2 === undefined) status2 = player.status
-            await player.update({grid , number , status , errors, isConnected:is_connected} , {transaction})
+            await player.update({grid , number , status , errors, isConnected:is_connected, host} , {transaction})
         }
 
         //Game finishing conditions (status = 2) are: if any of the connected players had won the game, or, if all the connected players had lost the game.
@@ -204,7 +204,7 @@ module.exports = {
     findPlayerByGameId,
     findPlayersByGameId,
     findConnectedPlayersByGameId,
-    verifyUserInPlayerList,
+    verifyUserOnPlayerList,
     updatePlayerByGameId,
     destroyPlayerByUserIdGameId
 }

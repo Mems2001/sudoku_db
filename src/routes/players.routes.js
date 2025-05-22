@@ -11,7 +11,7 @@ router.route('/multi/:game_id')
     .get(PlayersController.getConnectedPlayersByGameId)
     .post(authenticateSession , PlayersController.postPlayerByUserId)
 
-router.route('/in_list/:game_id')
-    .get(authenticateSession , PlayersController.getPlayerIsInList)
+router.route('/on_list/:game_id')
+    .get(authenticateSession , PlayersController.getPlayerIsOnList)
 
 module.exports = router
