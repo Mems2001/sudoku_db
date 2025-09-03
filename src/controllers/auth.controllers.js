@@ -143,7 +143,7 @@ async function authenticateSession (req ,res) {
         console.error(error)
         req.session.user = null
         res.delCookie('access-token')
-        res.status(400).json({
+        res.status(500).json({
             message: 'Error, not logged in'
         })
     }

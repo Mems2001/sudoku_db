@@ -73,7 +73,7 @@ async function createAnon() {
     const user = await models.Users.create({
             id,
             role_id: anon.id,
-            username: `user${id}`,
+            username: `anon${id}`,
             email: `${id}@anon.com`,
             password: id
         })
