@@ -22,8 +22,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Players.init({
-    userId: DataTypes.UUID,
-    gameId: DataTypes.UUID,
+    user_id: DataTypes.UUID,
+    game_id: DataTypes.UUID,
     grid: DataTypes.JSON,
     number: DataTypes.STRING,
     errors: DataTypes.INTEGER,

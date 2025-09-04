@@ -3,6 +3,7 @@ const uuid = require('uuid')
 
 async function createGame({puzzle_id , gameType, status} , user_id) {
     const transaction = await models.sequelize.transaction()
+    console.log('---> user_id <---', user_id)
 
     try {
         const puzzle = await models.Puzzles.findOne({
@@ -40,6 +41,7 @@ async function createGame({puzzle_id , gameType, status} , user_id) {
         return game
     } catch (error) {
         await transaction.rollback()
+        console.log(error)
         throw error
     }
 }
