@@ -18,9 +18,9 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   GameSettings.init({
-    userId: DataTypes.UUID,
-    cellsHighlight: DataTypes.BOOLEAN,
-    numbersHighlight: DataTypes.BOOLEAN
+    user_id: DataTypes.UUID,
+    cells_highlight: DataTypes.BOOLEAN,
+    numbers_highlight: DataTypes.BOOLEAN
   }, {
     sequelize,
     modelName: 'GameSettings',

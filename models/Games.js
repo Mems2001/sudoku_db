@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   Games.init({
     type: DataTypes.INTEGER,
-    puzzleId: DataTypes.UUID,
+    puzzle_id: DataTypes.UUID,
     status: DataTypes.INTEGER,
     time: DataTypes.INTEGER,
     // attempts: DataTypes.INTEGER

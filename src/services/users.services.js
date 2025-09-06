@@ -59,30 +59,38 @@ async function createUser ({username , email , password} , id) {
     }
 }
 
-async function createAnon() {
+async function returnAnon({pre_id}) {
     const transaction = await models.sequelize.transaction()
 
     try {
-    const anon = await models.Roles.findOne({
-        where: {
-            name: 'anon'
-        }
-    })
-    // console.log(anon)
-    const id = uuid.v4()
-    const user = await models.Users.create({
-            id,
-            role_id: anon.id,
-            username: `anon${id}`,
-            email: `${id}@anon.com`,
-            password: id
+        const anon = await models.Roles.findOne({
+            where: {
+                name: 'anon'
+            }
         })
-    
-    await transaction.commit()
 
-    const accesToken = await generateJWT(user.id , user.role_id , '1d')
+        let user
+        user = await models.Users.findOne({
+            where: {
+                id: pre_id
+            }
+        })
 
-    return {accesToken , user}
+        if (!user) {
+            user = await models.Users.create({
+                    id: pre_id,
+                    role_id: anon.id,
+                    username: `anon${pre_id}`,
+                    email: `${pre_id}@anon.com`,
+                    password: pre_id
+                }, {transaction})
+        }
+        
+        await transaction.commit()
+
+        const accesToken = await generateJWT(user.id , user.role_id , '1d')
+
+        return {accesToken , user}
     } catch (error) {
         await transaction.rollback()
         throw error
@@ -129,7 +137,7 @@ module.exports = {
     findUserByUserName,
     createUser,
     findUserByEmail,
-    createAnon,
+    returnAnon,
     deleteUser,
     updateGameSettingsByUserId
 }

@@ -6,7 +6,7 @@ router.route('/register')
     .post(usersControllers.register)
 
 router.route('/anon')
-    .get(usersControllers.getAnon)
+    .post(usersControllers.getAnon)
 
 router.route('/game_settings')
     .patch(authenticateSession, usersControllers.patchGameSettings)

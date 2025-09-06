@@ -39,15 +39,22 @@ async function register (req, res) {
 }
 
 function getAnon(req , res) {
-    usersServices.createAnon()
+    usersServices.returnAnon(req.body)
         .then(data => {
             res.setCookie('access-token' , data.accesToken)
             req.session.user = data.user
-            res.status(201).json(data.user)
+            res.status(201).json({
+                message: "Anon user logged in",
+                user_id: data.user.id,
+                role: "anon"
+            })
         })
         .catch(error => {
-            res.status(400).json({
-                error: error.message
+            // console.error(error)
+            res.status(500).json({
+                message: error.message,
+                class: "getAnon",
+                type: 0
             })
         })
 }

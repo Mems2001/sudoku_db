@@ -25,6 +25,7 @@ async function login (req, res) {
             if (!user) {
                 return res.status(404).json({
                     message: "username not found",
+                    class: "login",
                     type: 1
                 });
             }
@@ -33,6 +34,7 @@ async function login (req, res) {
             if (!user) {
                 return res.status(404).json({
                     message: "email not found",
+                    class: "login",
                     type: 1
                 });
             }
@@ -42,6 +44,7 @@ async function login (req, res) {
         if (!validatePassword) {
             return res.status(400).json({
                 message: "wrong password",
+                class: "login",
                 type: 2
             });
         }
@@ -49,13 +52,16 @@ async function login (req, res) {
         const cookie = req.cookies['access-token']
         if (cookie) {
             const data = verify(cookie , process.env.JWT_SECRET)
-            authServices.reasignGames(data.user_id , user.id)
-                .then(() => {
-                    console.log('Games reassigned')
-                    usersServices.deleteUser(data.user_id)
-                    req.session.user = null
-                    // Clear cookie here is an option but performance negtive
-                })
+    
+            if (user.username.slice(0, 4) === "anon") {
+                authServices.reasignGames(data.user_id , user.id)
+                    .then(() => {
+                        console.log('---> Games reassigned')
+                        usersServices.deleteUser(data.user_id)
+                        req.session.user = null
+                        // Clear cookie here is an option but performance negtive
+                    })
+            }
         }
         //JWT generation
         const accesToken = await generateJWT(user.id , user.role_id , '1d');
@@ -68,17 +74,28 @@ async function login (req, res) {
     } catch (error) {
         console.log(error);
         return res.status(500).json({
-            message: "Something went wrong, talk to any administrator"
+            message: "Something went wrong, talk to any administrator",
+            class: "login",
+            type: 0
         });
     }
 }
 
 function logout (req , res) {
-    req.session.user = null
-    res.delCookie('access-token')
-    res.status(200).json({
-        message: "User logged out"
-    })
+    try {
+        req.session.user = null
+        res.delCookie('access-token')
+        res.status(200).json({
+            message: "User logged out"
+        })
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({
+            message: "Something went wrong, talk to any administrator",
+            class: 'logout',
+            type: 0
+        })
+    }
 }
 
 /**
@@ -95,7 +112,9 @@ async function authenticateSession (req ,res) {
             if (!data) {
                 req.session.user = null
                 res.status(400).json({
-                    message: 'Session expired'
+                    message: 'Session expired',
+                    class: "authentication",
+                    type: 1
                 })
             }
             const user = await models.Users.findOne({
@@ -122,21 +141,25 @@ async function authenticateSession (req ,res) {
                     user_id: user.id,
                     role: role.name,
                     settings: {
-                        cells_highlight: gameSettings? gameSettings.cellsHighlight: true,
-                        numbers_highlight: gameSettings? gameSettings.numbersHighlight: true
+                        cells_highlight: gameSettings? gameSettings.cellsHighlight : true,
+                        numbers_highlight: gameSettings? gameSettings.numbersHighlight : true
                     }
                 })
             }  else {
                 req.session.user = null
                 res.delCookie('access-token')
                 res.status(400).json({
-                    message: "User doesn't exist"
+                    message: "User doesn't exist",
+                    class: "authentication",
+                    type: 2
                 })
             }
         } else {
             req.session.user = null
             res.status(400).json({
-                message: 'Cookie not found'
+                message: 'Cookie not found',
+                class: "authentication",
+                type: 3
             })
         }
     } catch (error) {
@@ -144,7 +167,9 @@ async function authenticateSession (req ,res) {
         req.session.user = null
         res.delCookie('access-token')
         res.status(500).json({
-            message: 'Error, not logged in'
+            message: 'Error, not logged in',
+            class: "authentication",
+            type: 0
         })
     }
 }
