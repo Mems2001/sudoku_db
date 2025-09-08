@@ -20,7 +20,8 @@ module.exports = (sequelize, DataTypes) => {
   GameSettings.init({
     user_id: DataTypes.UUID,
     cells_highlight: DataTypes.BOOLEAN,
-    numbers_highlight: DataTypes.BOOLEAN
+    numbers_highlight: DataTypes.BOOLEAN,
+    highlight_color: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'GameSettings',

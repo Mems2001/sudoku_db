@@ -110,7 +110,7 @@ async function deleteUser(id) {
     }
 }
 
-async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight}, user_id) {
+async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight, highlightColor}, user_id) {
     const transaction = await models.sequelize.transaction()
 
     try {
@@ -120,8 +120,9 @@ async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight}, us
             }
         })
         await gameSettings.update({
-            cellsHighlight,
-            numbersHighlight
+            cells_highlight: cellsHighlight,
+            numbers_highlight: numbersHighlight,
+            highlight_color: highlightColor
         }, {transaction})
 
         await transaction.commit()

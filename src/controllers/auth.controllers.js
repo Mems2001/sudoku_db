@@ -141,8 +141,9 @@ async function authenticateSession (req ,res) {
                     user_id: user.id,
                     role: role.name,
                     settings: {
-                        cells_highlight: gameSettings? gameSettings.cellsHighlight : true,
-                        numbers_highlight: gameSettings? gameSettings.numbersHighlight : true
+                        cells_highlight: gameSettings.cells_highlight,
+                        numbers_highlight: gameSettings.numbers_highlight,
+                        highlight_color: gameSettings.highlight_color
                     }
                 })
             }  else {

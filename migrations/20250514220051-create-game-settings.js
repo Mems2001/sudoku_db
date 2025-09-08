@@ -35,6 +35,12 @@ module.exports = {
           defaultValue: true,
           field: 'numbers_highlight'
         },
+        highlightColor: {
+          type: Sequelize.STRING,
+          allowNull: false,
+          defaultValue: "blue",
+          field: "highlight_color"
+        },
         createdAt: {
           allowNull: false,
           type: Sequelize.DATE,
