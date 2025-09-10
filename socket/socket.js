@@ -43,12 +43,12 @@ const initializeSocket = (server) => {
       socket.join(game_id)
       activeRooms.add(game_id)
       try {
-        if (user_data) {
-          var player = await PlayersService.findPlayerByUserId(user_data.user_id)
-          console.log('---> player found:', player.id)
-        }
         const game = await GamesService.findGameById(game_id)
         console.log('---> game status:' , game?.status)
+        if (user_data && game) {
+          var player = await PlayersService.findPlayerByUserIdGameId(user_data.user_id, game.id)
+          console.log('---> player found:', player.id)
+        }
         // Timer
         if (!timers[game_id] && game) {
           timers[game_id] = {timeElapsed: game.time , interval: null}
@@ -144,25 +144,28 @@ const initializeSocket = (server) => {
     })
 
     // Handle disconnection
-    socket.on("disconnect", async () => {
-      console.log("---> a user is disconnecting")
+    socket.on("disconnect", async (reason) => {
+      console.log("---> a user is disconnecting:" , reason)
 
       //We'll delete the player if the game has been started or delete the game if there are no more players connected to it. In anycase, the function will always try to simply remove the player (socket) from the correpsonding room.
       try {
         for (const room of activeRooms) {
-          console.log("romm:" , room)
+          console.log("---> romm:" , room)
           const sockets = io.sockets.adapter.rooms.get(room)
-          console.log(sockets , activeRooms)
+          console.log("---> :", sockets , activeRooms)
           const game = await GamesService.findGameById(room)
-          console.log('---> game found')
+          console.log('---> game found:')
+          // console.log("---> :", game)
 
           if (user_data) {
             console.log(user_data)
             console.log(`---> removing user ${user_data.user_id} from room ${room}`)
 
-            const player = await PlayersService.findPlayerByUserId(user_data.user_id)
+            const player = await PlayersService.findPlayerByUserIdGameId(user_data.user_id, game.id)
             //Host reasignation process.
-            if (player.host && game.status != 2) {
+            console.log("---> Host reasignation process")
+            // console.log("---> :", player, game)
+            if (player && player.host && game.status != 2) {
               var players = await PlayersService.findConnectedPlayersByGameId(room)
               for (let player of players) {
                 if (player.user_id != user_data.user_id) {
