@@ -10,7 +10,6 @@ router.route('/single/:game_id')
 router.route('/multi/:game_id')
     .get(PlayersController.getConnectedPlayersByGameId)
     .post(authenticateSession , PlayersController.postPlayerByUserId)
-    .patch(authenticateSession, PlayersController)
 
 router.route('/on_list/:game_id')
     .get(authenticateSession , PlayersController.getPlayerIsOnList)

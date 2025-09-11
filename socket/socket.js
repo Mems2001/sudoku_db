@@ -139,8 +139,8 @@ const initializeSocket = (server) => {
       socket.broadcast.emit('multiplayer-gameover', true)
     })
 
-    socket.on('coop-save', data => {
-      socket.broadcast.emit('coop-save-2' , data)
+    socket.on('coop-save', (saving_data) => {
+      socket.broadcast.emit('coop-save-2', {updatedGrid: saving_data.updatedGrid, updatedNumber: saving_data.updatedNumber, updatedErrors: saving_data.updatedErrors, setTurn: saving_data.setTurn})
     })
 
     // Handle disconnection

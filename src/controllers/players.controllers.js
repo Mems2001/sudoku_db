@@ -76,16 +76,11 @@ function patchPlayerByGameId (req, res) {
         })
 }
 
-function patchPlayersByGameId (req, res) {
-
-}
-
 module.exports = {
     postPlayerByUserId,
     getPlayerByGameId,
     getPlayersByGameId,
     getConnectedPlayersByGameId,
     getPlayerIsOnList,
-    patchPlayerByGameId,
-    patchPlayersByGameId
+    patchPlayerByGameId
 }
