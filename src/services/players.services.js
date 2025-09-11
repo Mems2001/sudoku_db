@@ -135,15 +135,15 @@ async function verifyUserOnPlayerList (game_id , user_id) {
 }
 /**
  * This service is in charge of the principal player's fields updates, such as the grid, status, number or errors, them corresponding to the puzzle solvig progression and status. But also, it allows us to update the status at the relating game's table when there is a winner or when the game has failed (all related players failed the game).
- * @param {*} game_id - The unique game's table identifier of which the user is a player.
- * @param {*} user_id - The unique user's table identifier, which links one user to one player.
+ * @param {uuid} game_id - The unique game's table identifier of which the user is a player.
+ * @param {uuid} user_id - The unique user's table identifier, which links one user to one player.
  * @param {*} param2 - An object containing the main puzzle solving data, such as grid (array<array<integer>>), status (integer), errors (integer), is_connected (boolean) and gameType (integer).
  * @returns The updated player data.
  */
 async function updatePlayerByGameId (game_id , user_id , {grid, number, status , errors, is_connected, host}) {
     console.log('---> data for user updating:' , 'game id:' , game_id)
-    const transaction = await models.sequelize.transaction()
     try {
+        const transaction = await models.sequelize.transaction()
         let player = await models.Players.findOne({where:{
             user_id,
             game_id
