@@ -112,7 +112,7 @@ class Sudoku {
         // console.log('---> At:', row, col)
         // We shuffle the array of posible numbers to guarantee randomness at each cell.
         const shuffled_array = this.shuffleArray([...posibilities[row][col]])
-        console.log(shuffled_array)
+        // console.log(shuffled_array)
         if (shuffled_array.length <= 0) return false
 
         // We try each posible number. For each, we then call the solveSudoku function again to tell if the sudoku is solvable given the number we are tying. Is solvable, we keep the number, if not we try the next number. When we are at a dead end the array of posible numbers will be empty, this is, the sudoku is not solvable, then we back-track. We back-track as well when any number of the array of posible numbers at the location leads us to a dead end. This means, we return to the previous location iteration, dicard the already tried number and keep trying with the other numbers. For example, suppose we are trying with number 5 at the [5][7] location. We will then fill the grid with 5 at [5][7] and then proceed to try the posible numbers at [5][8] (call again the solveSudoku function with the partially filled grid with 5 at [5][7]). If at the later location we found an empty array of posible numbers the algorithm returns to [5][7], discards 5 and try another number. If any of the numbers of the array of posible numbers at [5][7] leads us to a solution, then we return to [5][6] and try another number and so on, and iterate like that till we find a solvable path.
@@ -132,6 +132,18 @@ class Sudoku {
     generateSudoku() {
         this.solveSudoku(this.grid, JSON.parse(JSON.stringify(this.posibilities_grid)))
         return this.grid
+    }
+
+    removeNumbers(grid, count) {
+        while (count > 0) {
+            const row = Math.floor(Math.random() * 9);
+            const col = Math.floor(Math.random() * 9);
+            if (grid[row][col] !== 0) {
+                grid[row][col] = 0;
+                count--;
+            }
+        }
+        return grid;
     }
 }
 
