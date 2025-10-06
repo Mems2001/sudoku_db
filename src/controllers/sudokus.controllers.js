@@ -1,7 +1,7 @@
 const sudokuServices = require('../services/sudokus.services');
 
-function produceSudoku (req , res) {
-    sudokuServices.createSudoku()
+function getSudokuTest (req , res) {
+    sudokuServices.createSudokuTest(req.params.algorithm)
         .then(data => {
             res.status(201).json(data)
         })
@@ -50,7 +50,7 @@ function getSudokuById (req , res) {
 }
 
 module.exports = {
-    produceSudoku,
+    getSudokuTest,
     getRandomSudoku,
     getAllSudokus,
     getSudokuById

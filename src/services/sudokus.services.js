@@ -1,57 +1,66 @@
-const models = require('../../models');
-const Sudoku = require('../../utils/createSudoku2');
-const uuid = require('uuid');
+const models = require('../../models')
+const Sudoku1 = require('../../utils/createSudokuP')
+const Sudoku2 = require('../../utils/createSudoku2')
+const Sudoku3 = require('../../utils/createSudoku3')
+const uuid = require('uuid')
 
-async function createSudoku () {
-    const transaction = await models.sequelize.transaction();
+async function createSudokuTest (algorithm) {
+    const transaction = await models.sequelize.transaction()
 
     try {
-        const sudoku = new Sudoku();
-        const grid = sudoku.generateSudoku();
-        let number = '';
+        let sudoku
+        switch(algorithm) {
+            case '1':
+                sudoku = new Sudoku1()
+                break
+            case '2':
+                sudoku = new Sudoku2()
+                break
+            case '3':
+                sudoku = new Sudoku3()
+                break
+        }
+        const grid = sudoku.generateSudoku()
+        let number = ''
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
                 if (grid[i][j] !== 0) {
-                    number += grid[i][j];
+                    number += grid[i][j]
                 }
             }
         }
-        let data = await models.Sudokus.create({
-            id: uuid.v4(),
-            number,
-            grid: JSON.stringify(grid)
-        }, {transaction});
+        // let data = await models.Sudokus.create({
+        //     id: uuid.v4(),
+        //     number,
+        //     grid: JSON.stringify(grid)
+        // }, {transaction})
 
-        const puzzle = sudoku.removeNumbers(sudoku.grid , 40)
-        let puzzleNumber = ''
+        // const puzzle = sudoku.removeNumbers(sudoku.grid , 40)
+        // let puzzleNumber = ''
 
-        for (let i = 0; i < 9; i++) {
-            for (let j = 0; j < 9; j++) {
-                if (puzzle[i][j] !== 0) {
-                    puzzleNumber += puzzle[i][j];
-                } else {
-                    puzzleNumber += '0'
-                }
-            }
-        }
+        // for (let i = 0; i < 9; i++) {
+        //     for (let j = 0; j < 9; j++) {
+        //         if (puzzle[i][j] !== 0) {
+        //             puzzleNumber += puzzle[i][j]
+        //         } else {
+        //             puzzleNumber += '0'
+        //         }
+        //     }
+        // }
 
-        let puzzleData = await models.Puzzles.create({
-            id: uuid.v4(),
-            sudoku_id: data.id,
-            number: puzzleNumber,
-            grid: puzzle
-        } , {transaction})
+        // let puzzleData = await models.Puzzles.create({
+        //     id: uuid.v4(),
+        //     sudoku_id: data.id,
+        //     number: puzzleNumber,
+        //     grid: puzzle
+        // } , {transaction})
 
-        if (!data && !puzzleData) {
-            data = createSudoku()
-        }
-
-        await transaction.commit();
-        return {data , puzzleData};
+        await transaction.commit()
+        return {grid, number}
     } catch (error) {
-        await transaction.rollback();
-        console.log(error);
-        throw error;
+        await transaction.rollback()
+        console.log(error)
+        throw error
     }
 }
 
@@ -85,7 +94,7 @@ async function findSudokuById (id) {
 }
 
 module.exports = {
-    createSudoku, 
+    createSudokuTest, 
     findRandomSudoku,
     findAllSudokus,
     findSudokuById

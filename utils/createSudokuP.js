@@ -261,7 +261,7 @@ class Sudoku {
         // console.log(cell , sudoku[cell] , value);
     }
 
-    createSudoku () {
+    generateSudoku () {
         const numbers = [1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9];
         const rows = ['A' , 'B' , 'C' , 'D' , 'E'];
         let cells = [];

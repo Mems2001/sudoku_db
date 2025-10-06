@@ -12,7 +12,7 @@ router.route('/get_random')
 router.route('/:id')
     .get(sudokuControlles.getSudokuById)
 
-router.route('/create')
-    .post(sudokuControlles.produceSudoku)
+router.route('/test/:algorithm')
+    .get(sudokuControlles.getSudokuTest)
 
 module.exports = router

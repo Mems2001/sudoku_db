@@ -32,22 +32,22 @@ class Sudoku {
     solveSudoku(grid) {
         let row = -1;
         let col = -1;
-        let isEmpty = true;
+        let isFilled = true;
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
                 if (grid[i][j] === 0) {
                     row = i;
                     col = j;
-                    isEmpty = false;
+                    isFilled = false;
                     break;
                 }
             }
-            if (!isEmpty) {
+            if (!isFilled) {
                 break;
             }
         }
 
-        if (isEmpty) {
+        if (isFilled) {
             return true;
         }
 

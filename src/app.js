@@ -48,10 +48,10 @@ app.use((req, res, next) => {
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Configuración para CORS
       maxAge: 1000 * 60 * 60 * 24, // 1 día por defecto
       domain: process.env.NODE_ENV === 'production' ? 'sudoku-db-ip9b.onrender.com' : undefined
-    };
+    }
     const finalOptions = { ...defaultOptions, ...options }
     res.cookie(name, value, finalOptions)
-  };
+  }
 
   res.delCookie = (name, options = {}) => {
     const defaultOptions = {
@@ -60,14 +60,14 @@ app.use((req, res, next) => {
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       domain: process.env.NODE_ENV === 'production' ? 'sudoku-db-ip9b.onrender.com' : undefined,
       path:  '/'
-    };
+    }
     const finalOptions = { ...defaultOptions, ...options }
     console.log('Clearing cookie with options:', finalOptions)
-    res.clearCookie(name, finalOptions);
-  };
+    res.clearCookie(name, finalOptions)
+  }
 
-  next();
-});
+  next()
+})
 
 //  Accept json & form-urlencoded
 app.use(express.json())

@@ -18,7 +18,7 @@ async function login (req, res) {
     const {useUsername , username , email , password} = req.body
 
     try {
-        //User existance verification
+        //User existence verification
         let user = null;
         if (useUsername) {
             user = await usersServices.findUserByUserName(username);
@@ -64,8 +64,8 @@ async function login (req, res) {
             }
         }
         //JWT generation
-        const accesToken = await generateJWT(user.id , user.role_id , '1d');
-        // const refreshToken = await generateJWT(user.id , user.role_id , '7 d');
+        const accesToken = await generateJWT(user.id , user.role_id , '1d')
+        // const refreshToken = await generateJWT(user.id , user.role_id , '7 d')
         res.setCookie('access-token', accesToken)
         // res.cookie('refresh-token' , refreshToken)
         res.status(200).json({

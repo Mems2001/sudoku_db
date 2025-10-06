@@ -1,6 +1,6 @@
 'use strict';
 const uuid = require('uuid')
-const Sudoku = require('../utils/createSudoku2');
+const Sudoku = require('../utils/createSudoku3');
 const { Op } = require('sequelize');
 
 /** @type {import('sequelize-cli').Migration} */
