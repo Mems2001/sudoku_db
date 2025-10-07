@@ -3,6 +3,7 @@ const uuid = require('uuid')
 const { hashPassword } = require('../../utils/bcrypt')
 const { generateJWT } = require('../../utils/generate-jwt')
 const { verify } = require('jsonwebtoken')
+const AuthServices = require('../services/auth.services')
 
 async function findUserByUserName (username) {
     return models.Users.findOne({
@@ -26,12 +27,13 @@ async function createUser ({username , email , password} , id) {
     const userRole = await models.Roles.findOne({where:{name:'admin'}}).catch(err => {console.error(err)})
     
     try {
-        let data = undefined
+        let anonData = undefined
         let newUser = undefined
         if (id) {
-            data = verify(id , process.env.JWT_SECRET)
+            anonData = verify(id , process.env.JWT_SECRET)
         }
-        const user = await models.Users.findOne({where:{id: data.user_id}})
+        // We verify if the user was using a anon user, if so, we update it instead of creating a new user.
+        const user = await models.Users.findOne({where:{id: anonData.user_id}})
         if (user) {
             newUser = await user.update({
                 username,
@@ -39,6 +41,12 @@ async function createUser ({username , email , password} , id) {
                 role_id: userRole.id,
                 password: hashPassword(password)
             })
+            await models.GameSettings.create({
+                id: uuid.v4(),
+                user_id: newUser.id
+            },{transaction})
+            // Anon game reasignation to the new user
+            await AuthServices.reasignGames(anonData.user_id, newUser.id)
         } else {
             newUser = await models.Users.create({
                 id: uuid.v4(),
@@ -48,7 +56,8 @@ async function createUser ({username , email , password} , id) {
                 password: hashPassword(password)
             }, { transaction })
             await models.GameSettings.create({
-                id: uuid.v4()
+                id: uuid.v4(),
+                user_id: newUser.id
             },{transaction})
         }
         await transaction.commit()

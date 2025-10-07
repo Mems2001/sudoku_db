@@ -23,11 +23,11 @@ async function register (req, res) {
     }
 
     if (!user) {
-        usersServices.createUser(req.body , req.cookies['access-token'])
+        usersServices.createUser(req.body , req.cookies['sudoku21-access-token'])
          .then((user) => {
             req.session.user = null
-            res.delCookie('access-token')
-             res.status(201).json(user);
+            res.delCookie('sudoku21-access-token')
+            res.status(201).json(user)
          })
          .catch((error) => {
              console.log(error);
