@@ -41,7 +41,7 @@ module.exports = {
         }
         sudokus.push(sudokuE)
 
-        const puzzle = sudoku.removeNumbers(sudoku.grid , 40)
+        const puzzle = sudoku.removeNumbers(sudoku.grid , 30)
         let puzzle_number = ''
         for (let i = 0; i < 9; i++) {
           for (let j = 0; j < 9; j++) {

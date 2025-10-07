@@ -142,19 +142,19 @@ async function verifyUserOnPlayerList (game_id , user_id) {
  * @returns The updated player data.
  */
 async function updatePlayerByGameId (game_id , user_id , {grid, number, status , errors, is_connected, host, game_type}) {
-    console.log('---> data for user updating:' , 'game id:' , game_id, game_type)
+    // console.log('---> data for user updating:' , 'game id:' , game_id, game_type, 'status:', status, grid, number)
+    const transaction = await models.sequelize.transaction()
     try {
-        const transaction = await models.sequelize.transaction()
         let player = await models.Players.findOne({where:{
             user_id,
             game_id
         }})
-        // console.log(player , game_id , user_id)
+        // console.log('---> Player to be updated:', player , game_id , user_id)
         let status2 = status
         if (player && status2 === undefined) {
             status2 = player.status
-            await player.update({grid , number , status , errors, isConnected:is_connected, host} , {transaction})
         }
+        await player.update({grid , number , status:status2 , errors, isConnected:is_connected, host} , {transaction})
 
         //Game finishing conditions (status = 2) are: if any of the connected players had won the game, or, if all the connected players had lost the game.
         const game = await models.Games.findOne({
@@ -171,6 +171,7 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, status ,
             }
         })
 
+        // Multiplayer game and other players updating handler
         switch (status2) {
             case 0: //If the current player is still playing
                 if (game_type === 2) {
@@ -183,7 +184,7 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, status ,
                 await game.update({status:2} , {transaction})
                 if (game_type === 2) {
                     for (const p of players) {
-                        if (p.status !== 2) await p.update({status:1, grid, number, errors} , {transaction})
+                        await p.update({status:1, grid, number, errors} , {transaction})
                     }
                 }
                 break
@@ -203,10 +204,14 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, status ,
                     //We declared the game as finished in this case only when all the connected players have lost the game.
                     if (control === players.length) await game.update({status:2} , {transaction})
                 }
+                else {
+                    await game.update({status:2}, {transaction})
+                }
                 break
         }
 
         await transaction.commit()
+        // console.log(player)
         return player
     } catch (error) {
         await transaction.rollback()
