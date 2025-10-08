@@ -25,7 +25,7 @@ function getPuzzleById(req , res) {
 }
 
 function getRandomPuzzle (req , res) {
-    puzzlesServices.findRandomPuzzle()
+    puzzlesServices.findRandomPuzzle(req.params.difficulty)
         .then(data => {
             res.status(200).json(data)
         })

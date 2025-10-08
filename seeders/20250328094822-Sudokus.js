@@ -40,27 +40,33 @@ module.exports = {
           updated_at: new Date()
         }
         sudokus.push(sudokuE)
-
-        const puzzle = sudoku.removeNumbers(sudoku.grid , 30)
-        let puzzle_number = ''
-        for (let i = 0; i < 9; i++) {
-          for (let j = 0; j < 9; j++) {
-              if (puzzle[i][j] !== 0) {
-                  puzzle_number += String(puzzle[i][j]);
-              } else {
-                  puzzle_number += '0'
-              }
-          }
-        }
-        puzzles.push({
-          id: uuid.v4(),
-          sudoku_id: sudokuE.id,
-          number: puzzle_number,
-          grid: JSON.stringify(puzzle),
-          created_at: new Date(),
-          updated_at: new Date()
-        })
       }
+
+      sudokus.forEach(sudokuE => {
+        for (let i = 0; i < 6; i++) {
+          const sudoku = new Sudoku()
+          const puzzle = sudoku.removeNumbers(JSON.parse(sudokuE.grid) , (i+1)*10)
+          let puzzle_number = ''
+          for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+                if (puzzle[i][j] !== 0) {
+                    puzzle_number += String(puzzle[i][j]);
+                } else {
+                    puzzle_number += '0'
+                }
+            }
+          }
+          puzzles.push({
+            id: uuid.v4(),
+            sudoku_id: sudokuE.id,
+            difficulty: i,
+            number: puzzle_number,
+            grid: JSON.stringify(puzzle),
+            created_at: new Date(),
+            updated_at: new Date()
+          })
+        }
+      })
       // console.log(sudokus)
 
       await queryInterface.bulkInsert('sudokus' , sudokus , {transaction})

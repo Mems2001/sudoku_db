@@ -22,6 +22,10 @@ module.exports = {
           onDelete: 'CASCADE',
           onUpdate: 'CASCADE'
         },
+        difficulty: {
+          type: Sequelize.INTEGER, // 0 -> novice, 1 -> easy, 2 -> normal, 3 -> hard, 4 -> expert, 5 -> master
+          allowNull: false
+        },
         number: {
           type: Sequelize.STRING,
           unique: true

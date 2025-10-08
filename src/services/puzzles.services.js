@@ -12,9 +12,12 @@ async function findPuzzleBySudokuId(sudoku_id) {
     })
 }
 
-async function findRandomPuzzle () {
+async function findRandomPuzzle (difficulty) {
     try {
         const data = await models.Puzzles.findOne({
+            where: {
+                difficulty
+            },
             order: models.sequelize.random()
         });
         if (!data) {

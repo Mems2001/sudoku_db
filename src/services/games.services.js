@@ -78,7 +78,14 @@ async function findSavedGames(user_id) {
             {
                 model: models.Games,
                 as: 'Game',
-                attributes: ['id', 'type']
+                attributes: ['id', 'type'],
+                include: [
+                    {
+                        model: models.Puzzles,
+                        as: 'Puzzle',
+                        attributes: ['id', 'difficulty']
+                    }
+                ]
             }
         ]
     })

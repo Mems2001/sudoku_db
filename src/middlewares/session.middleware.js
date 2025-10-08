@@ -2,7 +2,7 @@ const { verify } = require('jsonwebtoken')
 
 function authenticateSession ( req , res , next ) {
     try {
-        const access_token = req.cookies['access-token']
+        const access_token = req.cookies['sudoku21-access-token']
         // console.log(access_token)
         const data = verify(access_token , process.env.JWT_SECRET)
         // console.log(data)

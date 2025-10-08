@@ -1,5 +1,6 @@
 const usersServices = require('../services/users.services')
 const authServices = require('../services/auth.services')
+const rolesServices = require('../services/roles.services')
 const models = require('../../models')
 const { comparePasswords } = require('../../utils/bcrypt')
 const { generateJWT } = require('../../utils/generate-jwt')
@@ -21,39 +22,42 @@ async function login (req, res) {
         //User existence verification
         let user
         if (useUsername) {
-            user = await usersServices.findUserByUserName(username);
+            user = await usersServices.findUserByUserName(username)
             if (!user) {
                 return res.status(404).json({
                     message: "username not found",
                     class: "login",
                     type: 1
-                });
+                })
             }
         } else {
-            user = await usersServices.findUserByEmail(email);
+            user = await usersServices.findUserByEmail(email)
             if (!user) {
                 return res.status(404).json({
                     message: "email not found",
                     class: "login",
                     type: 1
-                });
+                })
             }
         }
         //Password validation
-        const validatePassword = await comparePasswords(password , user.password);
+        const validatePassword = await comparePasswords(password , user.password)
         if (!validatePassword) {
             return res.status(400).json({
                 message: "wrong password",
                 class: "login",
                 type: 2
-            });
+            })
         }
         // Anon verification
         const cookie = req.cookies['sudoku21-access-token']
+        // console.log(cookie)
         if (cookie) {
             const data = verify(cookie , process.env.JWT_SECRET)
+            // console.log(data)
+            const role = await rolesServices.findRoleById(data.role_id)
     
-            if (user.username.slice(0, 4) === "anon") {
+            if (role.name === 'anon') {
                 authServices.reasignGames(data.user_id , user.id)
                     .then(() => {
                         console.log('---> Games reassigned')
@@ -104,7 +108,7 @@ function logout (req , res) {
  */
 async function authenticateSession (req ,res) {
     const cookie = req.cookies['sudoku21-access-token']
-    console.log(cookie)
+    console.log('---> Authenticating session with cookie:',cookie)
     
     try {
         if (cookie) {

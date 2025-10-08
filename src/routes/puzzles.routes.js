@@ -5,7 +5,7 @@ const puzzlesControllers = require('../controllers/puzzles.controllers')
 router.route('/')
     .get(puzzlesControllers.getAllPuzzles)
 
-router.route('/get_random')
+router.route('/get_random/:difficulty')
     .get(puzzlesControllers.getRandomPuzzle)
 
 router.route('/puzzle/:puzzle_id')
