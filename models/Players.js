@@ -26,6 +26,7 @@ module.exports = (sequelize, DataTypes) => {
     game_id: DataTypes.UUID,
     grid: DataTypes.JSON,
     number: DataTypes.STRING,
+    annotations: DataTypes.JSON,
     errors: DataTypes.INTEGER,
     status: DataTypes.INTEGER,
     isConnected: DataTypes.BOOLEAN,

@@ -60,6 +60,7 @@ function getAnon(req , res) {
 }
 
 function patchGameSettings(req , res) {
+    console.log(req.body)
     usersServices.updateGameSettingsByUserId(req.body, req.session.user.user_id)
         .then(data => {
             res.status(201).json(data)

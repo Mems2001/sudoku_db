@@ -147,7 +147,8 @@ async function authenticateSession (req ,res) {
                     settings: {
                         cells_highlight: gameSettings && gameSettings.cells_highlight ? gameSettings.cells_highlight : true,
                         numbers_highlight: gameSettings && gameSettings.numbers_highlight ? gameSettings.numbers_highlight : true,
-                        highlight_color: gameSettings && gameSettings.highlight_color ? gameSettings.highlight_color : "blue"
+                        highlight_color: gameSettings && gameSettings.highlight_color ? gameSettings.highlight_color : "blue",
+                        input_mode: gameSettings && gameSettings.input_mode ? gameSettings.input_mode : 0
                     }
                 })
             }  else {

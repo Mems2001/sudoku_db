@@ -35,10 +35,10 @@ const initializeSocket = (server) => {
     
     /**
      * This is the general room creation and joining logic. It also controls the acces of validated players to the game data. Keep in mind that joining a room and joining a game are different operations.
-     * @params game_id - id that allows us to control access to the game data in the front-end, sending back player-info as validation.
+     * @param {*} game_id - id that allows us to control access to the game data in the front-end, sending back player-info as validation.
      */
     socket.on('join-room' , async (game_id) => {
-      //Anyone can join the room, but only verified players can access to the game-info. User validation code is declared in the front-end, in VsGame.tsx. This logic will always create a new room and timer, since there will always be a validated player to be the first who joins, the host. This condition is sustained in the front-end logic, in the new game button.
+      //Anyone can join the room, but only verified players can access to the game-info. User validation code is declared in the front-end, in MultplayerGame.tsx. This logic will always create a new room and timer, since there will always be a validated player to be the first who joins, the host. This condition is sustained in the front-end logic, in the new game button.
       console.log('---> joning the room', game_id)
       socket.join(game_id)
       activeRooms.add(game_id)
@@ -77,7 +77,8 @@ const initializeSocket = (server) => {
         let existentPlayer = undefined
         const game = await GamesService.findGameById(game_id)
         let players = await PlayersService.findPlayersByGameId(game_id)
-        console.log("create-player event data:" , game, players)
+        // console.log("create-player event data:" , game, players)
+
         // We check if there already is a Player with that user_id
         players.forEach(player => {
           if (player.user_id === user_id) existentPlayer=player
@@ -140,7 +141,7 @@ const initializeSocket = (server) => {
     })
 
     socket.on('coop-save', (saving_data) => {
-      socket.broadcast.emit('coop-save-2', {updatedGrid: saving_data.updatedGrid, updatedNumber: saving_data.updatedNumber, updatedErrors: saving_data.updatedErrors, setTurn: saving_data.setTurn})
+      socket.broadcast.emit('coop-save-2', {updatedGrid: saving_data.updatedGrid, updatedNumber: saving_data.updatedNumber, updatedErrors: saving_data.updatedErrors, updatedAnnotations: saving_data.updatedAnnotations, setTurn: saving_data.setTurn})
     })
 
     // Handle disconnection

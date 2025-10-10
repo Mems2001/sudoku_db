@@ -42,6 +42,10 @@ module.exports = {
           type: Sequelize.STRING,
           allowNull: false
         },
+        annotations: {
+          type: Sequelize.JSON,
+          allowNull: false
+        },
         errors: {
           type: Sequelize.INTEGER,
           allowNull: false,

@@ -21,7 +21,8 @@ module.exports = (sequelize, DataTypes) => {
     user_id: DataTypes.UUID,
     cells_highlight: DataTypes.BOOLEAN,
     numbers_highlight: DataTypes.BOOLEAN,
-    highlight_color: DataTypes.STRING
+    highlight_color: DataTypes.STRING,
+    input_mode: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'GameSettings',

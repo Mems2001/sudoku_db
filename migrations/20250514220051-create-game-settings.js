@@ -41,6 +41,12 @@ module.exports = {
           defaultValue: "blue",
           field: "highlight_color"
         },
+        inputMode: {
+          type: Sequelize.INTEGER, // 0 -> Buttons, 1 -> Keyboard
+          allowNull: false,
+          defaultValue: 0,
+          field: 'input_mode'
+        },
         createdAt: {
           allowNull: false,
           type: Sequelize.DATE,

@@ -26,12 +26,23 @@ async function createGame({puzzle_id , gameType, status} , user_id) {
             status: status || 0
         } , {transaction})
 
+        const annotations = []
+        for (let i = 0; i < 9; i++) {
+            let row = []
+            for (let j = 0; j < 9; j++) {
+                let col = Array(9).fill(0)
+                row.push(col)
+            }
+            annotations.push(row)
+        }
+
         await models.Players.create({
             id: uuid.v4(),
             user_id,
             game_id: game.id,
             grid,
             number,
+            annotations,
             isConnected: true,
             host
         } , {transaction})
