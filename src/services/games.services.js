@@ -145,7 +145,7 @@ async function destroyGameByPlayerId (player_id) {
             ]
         })
 
-        if (player.Game.type !== 0 && player.host) {
+        if ((player.Game.type !== 0 && player.host) || player.Game.type === 0) {
             const game = await findGameById(player.game_id)
             await game.destroy({transaction})
         } else {
