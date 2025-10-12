@@ -14,7 +14,7 @@ function postPlayerByUserId (req , res) {
 
 async function getPlayerByGameId (req , res) {
     // console.log("---> user data in getPlayerByGameId:" , req.session)
-    await PlayersService.findPlayerByGameId(req.params.game_id , req.session.user.user_id)
+    await PlayersService.findPlayerByGameIdUserId(req.params.game_id , req.session.user.user_id)
         .then(data => {
             // console.log("data from getPlayerByGameId:" , data)
             if (data) res.status(200).json(data)

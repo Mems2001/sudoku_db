@@ -13,4 +13,7 @@ router.route('/:game_id')
     .get(gamesControllers.getGameById)
     .patch(authenticateSession , gamesControllers.patchGameById)
 
+router.route('/:player_id')
+    .delete(authenticateSession, gamesControllers.deleteGameByPlayerId)
+
 module.exports = router

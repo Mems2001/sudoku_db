@@ -52,16 +52,7 @@ async function findPlayerByUserId (user_id) {
     })
 }
 
-async function findPlayerByUserIdGameId (user_id, game_id) {
-    return await models.Players.findOne({
-        where: {
-            user_id,
-            game_id
-        }
-    })
-}
-
-async function findPlayerByGameId (game_id , user_id) {
+async function findPlayerByGameIdUserId (game_id , user_id) {
     // console.log('---> params in findPlayerByGameId:' , game_id , user_id)
     return await models.Players.findOne({
         where: {
@@ -246,8 +237,7 @@ async function destroyPlayerByUserIdGameId (user_id , game_id) {
 module.exports = {
     createPlayerByUserId,
     findPlayerByUserId,
-    findPlayerByUserIdGameId,
-    findPlayerByGameId,
+    findPlayerByGameIdUserId,
     findPlayersByGameId,
     findConnectedPlayersByGameId,
     verifyUserOnPlayerList,

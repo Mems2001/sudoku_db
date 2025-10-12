@@ -9,7 +9,8 @@ function postGame ( req , res ) {
         })
         .catch(err => {
             res.status(400).json({
-                error: err.message
+                message: err.message,
+                err
             })
         })
 }
@@ -21,7 +22,8 @@ function getGameById (req , res) {
         })
         .catch(err => {
             res.status(400).json({
-                error: err.message
+                message: err.message,
+                err
             })
         })
 }
@@ -31,8 +33,8 @@ function getMySavedGames (req , res) {
         .then(data => {
             res.status(200).json(data)
         })
-        .catch(data => {
-            res.status(400).json({error: data.message})
+        .catch(err => {
+            res.status(400).json({message: err.message, err})
         })
 }
 
@@ -43,7 +45,21 @@ function patchGameById ( req , res ) {
         })
         .catch(err => {
             res.status(400).json({
-                error: err.message
+                message: err.message,
+                err
+            })
+        })
+}
+
+function deleteGameByPlayerId (req, res) {
+    gamesServices.destroyGameByPlayerId(req.params.player_id)
+        .then(data => {
+            res.status(200).json(data)
+        })
+        .catch(err => {
+            res.status(400).json({
+                message: err.message,
+                err
             })
         })
 }
@@ -51,6 +67,7 @@ function patchGameById ( req , res ) {
 module.exports = {
     postGame,
     getGameById,
+    patchGameById,
     getMySavedGames,
-    patchGameById
+    deleteGameByPlayerId
 }

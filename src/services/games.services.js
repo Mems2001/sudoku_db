@@ -125,15 +125,33 @@ async function updateGameById(game_id , {status, time}) {
     }
 }
 
-async function destroyGameById (game_id) {
+/**
+ * Destroys the game or the player deppending on the player data. If the game type is not single player and the player is the host, then, it deletes the game and therefore the other players, deletes just the current player otherwise.
+ * @param {*} player_id 
+ */
+async function destroyGameByPlayerId (player_id) {
     const transaction = await models.sequelize.transaction()
     try {
-        const game = await models.Games.findOne({
+        const player = await models.Players.findOne({
             where: {
-                id: game_id
-            }
+                id: player_id
+            },
+            include: [
+                {
+                    model: models.Games,
+                    as: 'Game',
+                    attributes: ['id', 'type']
+                }
+            ]
         })
-        await game.destroy({transaction})
+
+        if (player.Game.type !== 0 && player.host) {
+            const game = await findGameById(player.game_id)
+            await game.destroy({transaction})
+        } else {
+            await player.destroy({transaction})
+        }
+
         await transaction.commit()
     } catch (error) {
         await transaction.rollback()
@@ -146,5 +164,5 @@ module.exports = {
     findGameById,
     findSavedGames,
     updateGameById,
-    destroyGameById
+    destroyGameByPlayerId
 }
