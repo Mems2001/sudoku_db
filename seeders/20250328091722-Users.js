@@ -47,7 +47,7 @@ module.exports = {
         ]
 
        await queryInterface.bulkInsert('users' , users , {transaction})
-       await queryInterface.bulkInsert('game_settings' , settings , {transaction})
+       await queryInterface.bulkInsert('profiles' , settings , {transaction})
 
        await transaction.commit()
    } catch(error) {

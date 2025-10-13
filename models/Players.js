@@ -29,8 +29,10 @@ module.exports = (sequelize, DataTypes) => {
     annotations: DataTypes.JSON,
     errors: DataTypes.INTEGER,
     status: DataTypes.INTEGER,
+    attempts: DataTypes.INTEGER,
     isConnected: DataTypes.BOOLEAN,
-    host: DataTypes.BOOLEAN
+    host: DataTypes.BOOLEAN,
+    show: DataTypes.BOOLEAN
   }, {
     sequelize,
     modelName: 'Players',

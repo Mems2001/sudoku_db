@@ -2,12 +2,12 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const transaction = await queryInterface.sequelize.transaction()
+    const transaction = await queryInterface.transaction()
 
     try {
-      await queryInterface.createTable('game_settings', {
+      await queryInterface.createTable('profiles', {
         id: {
-          allowNull: false,
+          allowNull: false, 
           unique: true,
           primaryKey: true,
           type: Sequelize.UUID
@@ -22,6 +22,11 @@ module.exports = {
           },
           onDelete: 'CASCADE',
           onUpdate: 'CASCADE'
+        },
+        gameStats: {
+          type: Sequelize.JSONB,
+          field: "game_stats",
+          defaultValue: {}
         },
         cellsHighlight: {
           type: Sequelize.BOOLEAN,
@@ -59,7 +64,7 @@ module.exports = {
           field: 'updated_at',
           defaultValue: new Date()
         }
-      },{transaction})
+      }, {transaction})
 
       await transaction.commit()
     } catch (error) {
@@ -68,14 +73,14 @@ module.exports = {
     }
   },
   async down(queryInterface, Sequelize) {
-    const transaction = await queryInterface.sequelize.transaction()
+    const transaction = await queryInterface.transaction()
 
     try {
-      await queryInterface.dropTable('game_settings', {transaction})
-
+      await queryInterface.dropTable('profiles')
       await transaction.commit()
     } catch (error) {
       await transaction.rollback()
+      throw error
     }
   }
 };

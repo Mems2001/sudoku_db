@@ -131,7 +131,7 @@ async function authenticateSession (req ,res) {
                     id: data.role_id
                 }
             })
-            const gameSettings = await models.GameSettings.findOne({
+            const gameSettings = await models.Profiles.findOne({
                 where: {
                     user_id: data.user_id
                 }

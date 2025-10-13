@@ -8,7 +8,4 @@ router.route('/register')
 router.route('/anon')
     .post(usersControllers.getAnon)
 
-router.route('/game_settings')
-    .patch(authenticateSession, usersControllers.patchGameSettings)
-
 module.exports = router;

@@ -56,6 +56,11 @@ module.exports = {
           allowNull: false,
           defaultValue: 0 // 0 -> unfinished , 1 -> winner , 2 -> loser
         },
+        attempts: {
+          type: Sequelize.INTEGER,
+          allowNull:false,
+          defaultValue: 1
+        },
         isConnected: {
           type: Sequelize.BOOLEAN,
           allowNull: false,
@@ -66,6 +71,11 @@ module.exports = {
           type: Sequelize.BOOLEAN,
           allowNull: false,
           defaultValue: false
+        },
+        show: {
+          type: Sequelize.BOOLEAN,
+          allowNull: false,
+          defaultValue: true
         },
         createdAt: {
           allowNull: false,
