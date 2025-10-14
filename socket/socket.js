@@ -23,7 +23,7 @@ const initializeSocket = (server) => {
     const cookies = socket.handshake.headers.cookie
     if (cookies) {
       const parsedCookies = cookie.parse(cookies)
-      const accessCookie = parsedCookies['access-token']
+      const accessCookie = parsedCookies['sudoku21-access-token']
       console.log(parsedCookies)
       if (accessCookie) {
         var user_data = verify(accessCookie , process.env.JWT_SECRET)
@@ -46,7 +46,7 @@ const initializeSocket = (server) => {
         const game = await GamesService.findGameById(game_id)
         console.log('---> game status:' , game?.status)
         if (user_data && game) {
-          var player = await PlayersService.findPlayerByUserIdGameId(user_data.user_id, game.id)
+          var player = await PlayersService.findPlayerByGameIdUserId(game.id, user_data.user_id)
           console.log('---> player found:', player.id)
         }
         // Timer
@@ -58,7 +58,7 @@ const initializeSocket = (server) => {
 
         //If we don't find a verified player and send back validated player info then the user can not access to the game-info, so, can not join the game. However, for this to happen anyone must be able to join the room since the socket logic is in charge on both getting player info or creating new players if it is the case.
         if (player) {
-          if (!player.is_connected) await PlayersService.updatePlayerByGameId(game_id, user_data.user_id, {is_connected:true})
+          if (!player.is_connected) await PlayersService.playerConnectById(player.id)
           socket.emit('player-info' , {player_id: player.id , isHost: player.host})
         }
 
@@ -102,11 +102,12 @@ const initializeSocket = (server) => {
       }
     })
 
-    socket.on('play-game' , async (game_id) => {
+    socket.on('play-game' , async ({game_id, init}) => {
       // console.log('---> starting game')
       socket.join(game_id)
       try {
-        await GamesService.updateGameById(game_id , {status: 1})
+        if (init) await GamesService.startMultiplayerGame(game_id)
+
         if (timers[game_id] && !timers[game_id].interval) {
           timers[game_id].interval = setInterval(
             () => {
@@ -162,15 +163,15 @@ const initializeSocket = (server) => {
             console.log(user_data)
             console.log(`---> removing user ${user_data.user_id} from room ${room}`)
 
-            const player = await PlayersService.findPlayerByUserIdGameId(user_data.user_id, game.id)
+            const player = await PlayersService.findPlayerByGameIdUserId(game.id, user_data.user_id)
             //Host reasignation process.
             console.log("---> Host reasignation process")
             // console.log("---> :", player, game)
-            if (player && player.host && game.status != 2) {
+            if (player && player.host) {
               var players = await PlayersService.findConnectedPlayersByGameId(room)
               for (let player of players) {
                 if (player.user_id != user_data.user_id) {
-                  await PlayersService.updatePlayerByGameId(room, player.user_id, {host:true})
+                  await PlayersService.updatePlayerHostById(player.id)
                   socket.broadcast.emit('new-host', player.id)
                   console.log('---> host reasigned')
                   break
@@ -187,7 +188,7 @@ const initializeSocket = (server) => {
               if (players && players.length > 1) {
                 host = false
               }
-              await PlayersService.updatePlayerByGameId(room, user_data.user_id, {is_connected:false, host})
+              await PlayersService.playerDisconectById(player.id, host)
               console.log(`---> player ${player.id} removed from room ${room}, player status updated.`)
             }
 
@@ -219,7 +220,7 @@ const initializeSocket = (server) => {
     });
   });
 
-  return io;
+  return io
 };
 
-module.exports = initializeSocket;
+module.exports = initializeSocket

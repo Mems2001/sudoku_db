@@ -1,7 +1,16 @@
 const { Op } = require('sequelize')
 const models = require('../../models')
 const uuid = require('uuid')
+const profilesServices = require('./profiles.services')
+const gamesServices = require('./games.services')
 
+/**
+ * In order to create a new player we get game and profile information to update the game stats at the user profile.
+ * @param {*} user_id 
+ * @param {*} game_id 
+ * @param {*} body 
+ * @returns 
+ */
 async function createPlayerByUserId (user_id, game_id, {is_connected}) {
     const transaction = await models.sequelize.transaction()
 
@@ -11,7 +20,7 @@ async function createPlayerByUserId (user_id, game_id, {is_connected}) {
             {
                 model: models.Puzzles,
                 as: 'Puzzle',
-                attributes: ['grid' , 'number']
+                attributes: ['grid' , 'number', 'difficulty']
             }
         ]
         })
@@ -63,12 +72,12 @@ async function findPlayerByGameIdUserId (game_id , user_id) {
             {
                 model: models.Games,
                 as: 'Game',
-                attributes: ['status' , 'time' , 'time'],
+                attributes: ['status' , 'type' , 'time'],
                 include: [
                     {
                         model: models.Puzzles,
                         as: 'Puzzle',
-                        attributes: ['grid' , 'number'],
+                        attributes: ['grid' , 'number', 'difficulty'],
                         include: [
                             {
                                 model: models.Sudokus,
@@ -92,7 +101,7 @@ async function findPlayersByGameId (game_id) {
             {
                 model: models.Users,
                 as: 'User',
-                attributes: ['username']
+                attributes: ['username', 'id']
             }
         ]
     })
@@ -137,7 +146,7 @@ async function verifyUserOnPlayerList (game_id , user_id) {
     return control
 }
 /**
- * This service is in charge of the principal player's fields updates, such as the grid, status, number or errors, them corresponding to the puzzle solvig progression and status and managing to update all the game players for cooperative games. But also, it allows us to update the status at the related game's table when there is a winner or when the game has failed (all related players failed the game).
+ * This service is in charge of the principal player's fields updates, such as the grid, status, number or errors, them corresponding to the puzzle solvig progression and status and managing to update all the game players for single and multiplayer games. But also, it allows us to update the status at the related game's table when there is a winner or when the game has failed (all related players failed the game).
  * @param {uuid} game_id - The unique game's table identifier of which the user is a player.
  * @param {uuid} user_id - The unique user's table identifier, which links one user to one player.
  * @param {*} param2 - An object containing the main puzzle solving data, such as grid (array<array<integer>>), status (integer), errors (integer), is_connected (boolean) and gameType (integer).
@@ -147,23 +156,27 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
     // console.log('---> data for user updating:' , 'game id:' , game_id, game_type, 'status:', status, grid, number)
     const transaction = await models.sequelize.transaction()
     try {
-        let player = await models.Players.findOne({where:{
-            user_id,
-            game_id
-        }})
+        let player = await findPlayerByGameIdUserId(game_id, user_id)
         // console.log('---> Player to be updated:', player , game_id , user_id)
         let status2 = status
         if (player && status2 === undefined) {
             status2 = player.status
         }
+        // Update profile errors
+        const game_type = player.Game.type
+        const puzzle_difficulty = player.Game.Puzzle.difficulty
+        const errors_for_game_stats = errors - player.errors
+        if (errors_for_game_stats > 0) {
+            await profilesServices.updateProfileErrorsByUserId(player.user_id, errors_for_game_stats, game_type, puzzle_difficulty)
+        }
+
+        // Update player data
         await player.update({grid , number , annotations, status:status2 , errors, isConnected:is_connected, host} , {transaction})
 
-        //Game finishing conditions (status = 2) are: if any of the connected players had won the game, or, if all the connected players had lost the game.
-        const game = await models.Games.findOne({
-            where: {
-                id: game_id
-            }
-        })
+        //Game finishing conditions (status = 2) for vs games are: if any of the connected players had won the game, or, if all the connected players had lost the game.
+        const game = await gamesServices.findGameById(game_id)
+
+        // All the players that are not the current player.
         const players = await models.Players.findAll({
             where: {
                 game_id,
@@ -173,7 +186,7 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
             }
         })
 
-        // Multiplayer game and other players updating handler
+        // Multiplayer players and game (both single and multiplayer) updating handler
         switch (status2) {
             case 0: //If the current player is still playing
                 if (game_type === 2) {
@@ -183,15 +196,22 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
                 }
                 break
             case 1: //If the current player won the game.
+                // For all game types this implies that the game is finished
                 await game.update({status:2} , {transaction})
+                await profilesServices.updateProfileWin(user_id, game_type, puzzle_difficulty)
                 if (game_type === 2) {
+                    //For coop, if one wins then the both win.
                     for (const p of players) {
                         await p.update({status:1, grid, number, errors} , {transaction})
+                        await profilesServices.updateProfileWin(p.user_id, game_type, puzzle_difficulty)
                     }
                 }
                 break
             case 2: //If the current player had lost the game.
+                await profilesServices.updateProfileLose(user_id, game_type, puzzle_difficulty)
                 if (game_type == 2) {
+                    // For coop, if one loses then both lose and the game is finished.
+                    await game.update({status:2} , {transaction})
                     for (const p of players) {
                         await p.update({status:2, grid, number, errors}, {transaction})
                     }
@@ -202,9 +222,9 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
                         // console.log(player)
                         if (p.status === 2) control += 1
                     }
-                    console.log('players length:', players.length , 'players with status 2:', control)
-                    //We declared the game as finished in this case only when all the connected players have lost the game.
-                    if (control === players.length) await game.update({status:2} , {transaction})
+                    console.log('all players length:', players.length + 1, 'players with status 2:', control)
+                    //We declared the game as finished in this case only when all the connected players had lost the game.
+                    if (control === (players.length + 1) ) await game.update({status:2} , {transaction})
                 }
                 else {
                     await game.update({status:2}, {transaction})
@@ -215,6 +235,65 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
         await transaction.commit()
         // console.log(player)
         return player
+    } catch (error) {
+        await transaction.rollback()
+        console.log(error)
+        throw error
+    }
+}
+
+async function updatePlayerHostById(player_id) {
+    const transaction = await models.sequelize.transaction()
+
+    try {
+        const player = await models.Players.findOne({
+            where: {
+                id: player_id
+            }
+        })
+        await player.update({host:true}, {transaction})
+
+        await transaction.commit()
+    } catch (error) {
+        await transaction.rollback()
+        console.log(error)
+        throw error
+    }
+}
+
+async function playerConnectById(player_id) {
+    const transaction = await models.sequelize.transaction()
+
+    try {
+        const player = await models.Players.findOne({
+            where: {
+                id: player_id
+            }
+        })
+
+        await player.update({is_connected:true}, {transaction})
+
+        await transaction.commit()
+    } catch (error) {
+        await transaction.rollback()
+        console.log(error)
+        throw error
+    }
+}
+
+async function playerDisconectById(player_id, host) {
+    const transaction = await models.sequelize.transaction()
+
+    try {
+        const player = await models.Players.findOne({
+            where: {
+                id: player_id
+            }
+        })
+
+        await player.update({is_connected:false, host}, {transaction})
+
+        await transaction.commit()
     } catch (error) {
         await transaction.rollback()
         console.log(error)
@@ -235,12 +314,15 @@ async function destroyPlayerByUserIdGameId (user_id , game_id) {
 }
 
 module.exports = {
-    createPlayerByUserId,
+    playerConnectById,
     findPlayerByUserId,
-    findPlayerByGameIdUserId,
     findPlayersByGameId,
-    findConnectedPlayersByGameId,
-    verifyUserOnPlayerList,
+    playerDisconectById,
+    updatePlayerHostById,
     updatePlayerByGameId,
-    destroyPlayerByUserIdGameId
+    createPlayerByUserId,
+    verifyUserOnPlayerList,
+    findPlayerByGameIdUserId,
+    destroyPlayerByUserIdGameId,
+    findConnectedPlayersByGameId
 }

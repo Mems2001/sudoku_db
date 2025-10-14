@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const transaction = await queryInterface.transaction()
+    const transaction = await queryInterface.sequelize.transaction()
 
     try {
       await queryInterface.createTable('profiles', {
@@ -15,6 +15,7 @@ module.exports = {
         userId: {
           type: Sequelize.UUID,
           allowNull: false,
+          unique: true,
           field: 'user_id',
           references: {
             model: 'users',
@@ -73,7 +74,7 @@ module.exports = {
     }
   },
   async down(queryInterface, Sequelize) {
-    const transaction = await queryInterface.transaction()
+    const transaction = await queryInterface.sequelize.transaction()
 
     try {
       await queryInterface.dropTable('profiles')

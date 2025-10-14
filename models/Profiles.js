@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
     numbers_highlight: DataTypes.BOOLEAN,
     highlight_color: DataTypes.STRING,
     input_mode: DataTypes.INTEGER
-    // games_played: DataTypes.INTEGER,
+    // games_started: DataTypes.INTEGER,
     // games_won: DataTypes.INTEGER,
     // games_lost: DataTypes.INTEGER,
     // games_restarted: DataTypes.INTEGER,

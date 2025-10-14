@@ -21,7 +21,7 @@ async function findUserByEmail (email) {
     })
 }
 
-async function createUser ({username , email , password} , id) {
+async function createUser ({username , email , password, cellsHighlight, numbersHighlight, highlightColor, inputMode} , id) {
     const transaction = await models.sequelize.transaction()
 
     const userRole = await models.Roles.findOne({where:{name:'admin'}}).catch(err => {console.error(err)})
@@ -32,7 +32,7 @@ async function createUser ({username , email , password} , id) {
         if (id) {
             anonData = verify(id , process.env.JWT_SECRET)
         }
-        // We verify if the user was using a anon user, if so, we update it instead of creating a new user.
+        // We verify if the user was using a anon user, if so, we update it instead of creating a new user. This also automatically "reasign" any anon game.
         const user = await models.Users.findOne({where:{id: anonData.user_id}})
         if (user) {
             newUser = await user.update({
@@ -41,12 +41,6 @@ async function createUser ({username , email , password} , id) {
                 role_id: userRole.id,
                 password: hashPassword(password)
             })
-            await models.GameSettings.create({
-                id: uuid.v4(),
-                user_id: newUser.id
-            },{transaction})
-            // Anon game reasignation to the new user
-            await AuthServices.reasignGames(anonData.user_id, newUser.id)
         } else {
             newUser = await models.Users.create({
                 id: uuid.v4(),
@@ -55,9 +49,14 @@ async function createUser ({username , email , password} , id) {
                 role_id: userRole.id,
                 password: hashPassword(password)
             }, { transaction })
-            await models.GameSettings.create({
+
+            await models.Profiles.create({
                 id: uuid.v4(),
-                user_id: newUser.id
+                user_id: newUser.id,
+                input_mode: inputMode,
+                cells_highlight: cellsHighlight,
+                numbers_highlight: numbersHighlight,
+                highlight_color: highlightColor
             },{transaction})
         }
         await transaction.commit()
@@ -93,6 +92,11 @@ async function returnAnon({pre_id}) {
                     email: `${pre_id}@anon.com`,
                     password: pre_id
                 }, {transaction})
+            
+            await models.Profiles.create({
+                id: uuid.v4(),
+                user_id: user.id
+            }, {transaction})
         }
         
         await transaction.commit()

@@ -23,7 +23,8 @@ module.exports = (sequelize, DataTypes) => {
   Puzzles.init({
     sudoku_id: DataTypes.UUID,
     number: DataTypes.STRING,
-    grid: DataTypes.JSON
+    grid: DataTypes.JSON,
+    difficulty: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Puzzles',

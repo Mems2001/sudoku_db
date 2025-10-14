@@ -39,7 +39,7 @@ function getMySavedGames (req , res) {
 }
 
 function patchGameById ( req , res ) {
-    gamesServices.updateGameById(req.params.game_id , req.body)
+    gamesServices.updateGameById(req.params.game_id, req.body)
         .then(data => {
             res.status(200).json(data)
         })
