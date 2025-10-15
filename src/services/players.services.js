@@ -200,17 +200,17 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
             case 1: //If the current player won the game.
                 // For all game types this implies that the game is finished
                 await game.update({status:2} , {transaction})
-                await profilesServices.updateProfileWin(user_id, game_type, puzzle_difficulty)
+                await profilesServices.updateProfileWin(user_id, game_type, puzzle_difficulty, transaction)
                 if (game_type === 2) {
                     //For coop, if one wins then the both win.
                     for (const p of players) {
                         await p.update({status:1, grid, number, errors} , {transaction})
-                        await profilesServices.updateProfileWin(p.user_id, game_type, puzzle_difficulty)
+                        await profilesServices.updateProfileWin(p.user_id, game_type, puzzle_difficulty, transaction)
                     }
                 }
                 break
             case 2: //If the current player had lost the game.
-                await profilesServices.updateProfileLose(user_id, game_type, puzzle_difficulty)
+                await profilesServices.updateProfileLose(user_id, game_type, puzzle_difficulty, transaction)
                 if (game_type == 2) {
                     // For coop, if one loses then both lose and the game is finished.
                     await game.update({status:2} , {transaction})

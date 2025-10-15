@@ -125,8 +125,8 @@ async function updateProfileErrorsByUserId (user_id, errors, game_type, puzzle_d
     }
 }
 
-async function updateProfileWin(user_id, game_type, puzzle_difficulty) {
-    const transaction = await models.sequelize.transaction()
+async function updateProfileWin(user_id, game_type, puzzle_difficulty, r_transaction) {
+    const transaction = r_transaction ?? await models.sequelize.transaction()
 
     try {
         const profile = await models.Profiles.findOne({
@@ -149,9 +149,10 @@ async function updateProfileWin(user_id, game_type, puzzle_difficulty) {
             [game_type_name]: new_game_type_stats
         }
 
+        console.log(new_game_stats)
         await profile.update({game_stats: new_game_stats}, {transaction})
 
-        await transaction.commit()
+        // await transaction.commit()
     } catch(error) {
         await transaction.rollback()
         console.error(error)
@@ -159,8 +160,8 @@ async function updateProfileWin(user_id, game_type, puzzle_difficulty) {
     }
 }
 
-async function updateProfileLose(user_id, game_type, puzzle_difficulty) {
-    const transaction = await models.sequelize.transaction()
+async function updateProfileLose(user_id, game_type, puzzle_difficulty, r_transaction) {
+    const transaction = r_transaction ?? await models.sequelize.transaction()
 
     try {
         const profile = await models.Profiles.findOne({
@@ -183,9 +184,10 @@ async function updateProfileLose(user_id, game_type, puzzle_difficulty) {
             [game_type_name]: new_game_type_stats
         }
 
+        console.log(game_stats)
         await profile.update({game_stats: new_game_stats}, {transaction})
 
-        await transaction.commit()
+        // await transaction.commit()
     } catch(error) {
         await transaction.rollback()
         console.error(error)
