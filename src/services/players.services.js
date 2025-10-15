@@ -2,7 +2,6 @@ const { Op } = require('sequelize')
 const models = require('../../models')
 const uuid = require('uuid')
 const profilesServices = require('./profiles.services')
-const gamesServices = require('./games.services')
 
 /**
  * In order to create a new player we get game and profile information to update the game stats at the user profile.
@@ -163,7 +162,6 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
             status2 = player.status
         }
         // Update profile errors
-        const game_type = player.Game.type
         const puzzle_difficulty = player.Game.Puzzle.difficulty
         const errors_for_game_stats = errors - player.errors
         if (errors_for_game_stats > 0) {
@@ -174,7 +172,11 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
         await player.update({grid , number , annotations, status:status2 , errors, isConnected:is_connected, host} , {transaction})
 
         //Game finishing conditions (status = 2) for vs games are: if any of the connected players had won the game, or, if all the connected players had lost the game.
-        const game = await gamesServices.findGameById(game_id)
+        const game = await models.Games.findOne({
+            where: {
+                id: game_id
+            }
+        })
 
         // All the players that are not the current player.
         const players = await models.Players.findAll({

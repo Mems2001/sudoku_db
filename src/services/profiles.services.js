@@ -45,6 +45,26 @@ function handleErrorStatByDifficulty(puzzle_difficulty) {
     }
 }
 
+async function findProfilesByGameId(game_id) {
+    const players = await models.Players.findAll({
+        where: {
+            game_id
+        }
+    })
+    let profiles = []
+    for (const player of players) {
+        const profile = await models.Profiles.findOne({
+            where: {
+                user_id: player.user_id
+            }
+        })
+        profiles.push(profile)
+    }
+    // console.log(profiles)
+
+    return profiles
+}
+
 async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight, highlightColor, inputMode}, user_id) {
     const transaction = await models.sequelize.transaction()
 
@@ -176,6 +196,7 @@ async function updateProfileLose(user_id, game_type, puzzle_difficulty) {
 module.exports = {
     updateProfileWin,
     updateProfileLose,
+    findProfilesByGameId,
     handleGameStatByGameType,
     updateGameSettingsByUserId,
     handleGameStatByDifficulty,

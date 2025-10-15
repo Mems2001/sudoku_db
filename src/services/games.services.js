@@ -155,6 +155,30 @@ async function updateGameById(game_id, {status, time}) {
             ]
         })
 
+        // Time update at profile
+        const time_played_for_game_stats = time - game.time
+        if (time && time_played_for_game_stats > 0) {
+            const profiles = await profilesServices.findProfilesByGameId(game_id)
+            const game_type = profilesServices.handleGameStatByGameType(game.type)
+            const time_played_by_difficulty = profilesServices.handleGameStatByDifficulty(game.Puzzle.difficulty, 'time_played')
+            for (const profile of profiles) {
+                const game_stats = profile.game_stats
+                // console.log( '---> Game stats:', profile, game_stats, game_type, time_played_by_difficulty)
+                const game_type_stats = game_stats[game_type]
+                const new_game_type_stats = {
+                    ...game_type_stats,
+                    [time_played_by_difficulty]: game_type_stats[time_played_by_difficulty] ? game_type_stats[time_played_by_difficulty] + time_played_for_game_stats : time_played_for_game_stats
+                }
+                const new_game_stats = {
+                    ...game_stats,
+                    [game_type]: new_game_type_stats
+                }
+
+                // console.log('---> New game stats:', new_game_stats)
+                await profile.update({game_stats: new_game_stats}, {transaction})
+            }
+        }
+
         await game.update({
             status,
             time
