@@ -151,7 +151,7 @@ async function verifyUserOnPlayerList (game_id , user_id) {
  * @param {*} param2 - An object containing the main puzzle solving data, such as grid (array<array<integer>>), status (integer), errors (integer), is_connected (boolean) and gameType (integer).
  * @returns The updated player data.
  */
-async function updatePlayerByGameId (game_id , user_id , {grid, number, annotations, status , errors, is_connected, host, game_type}) {
+async function updatePlayerByGameId (game_id , user_id , {grid, number, annotations, status , errors, host, game_type}) {
     // console.log('---> data for user updating:' , 'game id:' , game_id, game_type, 'status:', status, grid, number)
     const transaction = await models.sequelize.transaction()
     try {
@@ -169,7 +169,7 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
         }
 
         // Update player data
-        await player.update({grid , number , annotations, status:status2 , errors, isConnected:is_connected, host} , {transaction})
+        await player.update({grid , number , annotations, status:status2 , errors, host} , {transaction})
 
         //Game finishing conditions (status = 2) for vs games are: if any of the connected players had won the game, or, if all the connected players had lost the game.
         const game = await models.Games.findOne({

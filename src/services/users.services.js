@@ -21,16 +21,16 @@ async function findUserByEmail (email) {
     })
 }
 
-async function createUser ({username , email , password, cellsHighlight, numbersHighlight, highlightColor, inputMode} , id) {
+async function createUser ({username , email , password, cellsHighlight, numbersHighlight, highlightColor, inputMode} , token) {
     const transaction = await models.sequelize.transaction()
 
-    const userRole = await models.Roles.findOne({where:{name:'admin'}}).catch(err => {console.error(err)})
+    const userRole = await models.Roles.findOne({where:{name:'user'}}).catch(err => {console.error(err)})
     
     try {
         let anonData = undefined
         let newUser = undefined
-        if (id) {
-            anonData = verify(id , process.env.JWT_SECRET)
+        if (token) {
+            anonData = verify(token , process.env.JWT_SECRET)
         }
         // We verify if the user was using a anon user, if so, we update it instead of creating a new user. This also automatically "reasign" any anon game.
         const user = await models.Users.findOne({where:{id: anonData.user_id}})

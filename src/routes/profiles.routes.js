@@ -6,4 +6,7 @@ const router = require('express').Router()
 router.route('/game-settings')
     .patch(authenticateSession, profilesControllers.patchGameSettings)
 
+router.route('/my-profile')
+    .get(authenticateSession, profilesControllers.getMyProfile)
+
 module.exports = router

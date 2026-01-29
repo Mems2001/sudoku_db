@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Profiles.belongsTo(models.Users, {
-        as: 'Profile',
+        as: 'User',
         foreignKey: 'user_id'
       })
     }
@@ -24,15 +24,6 @@ module.exports = (sequelize, DataTypes) => {
     numbers_highlight: DataTypes.BOOLEAN,
     highlight_color: DataTypes.STRING,
     input_mode: DataTypes.INTEGER
-    // games_started: DataTypes.INTEGER,
-    // games_won: DataTypes.INTEGER,
-    // games_lost: DataTypes.INTEGER,
-    // games_restarted: DataTypes.INTEGER,
-    // win_ratio: DataTypes.DOUBLE,
-    // total_errors: DataTypes.INTEGER,
-    // error_ratio: DataTypes.DOUBLE,
-    // time_played: DataTypes.INTEGER,
-    // time_per_game: DataTypes.DOUBLE
   }, {
     sequelize,
     modelName: 'Profiles',

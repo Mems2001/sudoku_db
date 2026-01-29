@@ -45,6 +45,22 @@ function handleErrorStatByDifficulty(puzzle_difficulty) {
     }
 }
 
+async function findProfileByUserId(user_id) {
+    const profile = await models.Profiles.findOne({
+        where: {
+            user_id
+        },
+        include: [
+            {
+                model: models.Users,
+                as: 'User',
+                attributes: ['username', 'email']
+            }
+        ]
+    })
+    return profile
+}
+
 async function findProfilesByGameId(game_id) {
     const players = await models.Players.findAll({
         where: {
@@ -67,6 +83,7 @@ async function findProfilesByGameId(game_id) {
 
 async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight, highlightColor, inputMode}, user_id) {
     const transaction = await models.sequelize.transaction()
+    // console.log('🔧 Service: updateGameSettingsByUserId called with user_id =', user_id)
 
     try {
         const gameSettings = await models.Profiles.findOne({
@@ -74,6 +91,7 @@ async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight, hig
                 user_id
             }
         })
+        console.log('🔧 Service: Profile found?', !!gameSettings, 'Profile =', gameSettings)
         await gameSettings.update({
             cells_highlight: cellsHighlight,
             numbers_highlight: numbersHighlight,
@@ -198,6 +216,7 @@ async function updateProfileLose(user_id, game_type, puzzle_difficulty, r_transa
 module.exports = {
     updateProfileWin,
     updateProfileLose,
+    findProfileByUserId,
     findProfilesByGameId,
     handleGameStatByGameType,
     updateGameSettingsByUserId,
