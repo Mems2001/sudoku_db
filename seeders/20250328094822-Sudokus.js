@@ -23,7 +23,8 @@ module.exports = {
       let puzzles = []
       for (let i=0 ; i < 100 ; i++) {
         const sudoku = new Sudoku()
-        const grid = sudoku.generateSudoku()
+        sudoku.generateSudoku()
+        const grid = sudoku.grid
         let number = '';
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
@@ -75,6 +76,7 @@ module.exports = {
       await transaction.commit()
     } catch (error) {
       await transaction.rollback()
+      // console.log(error)
       throw error
     }
   },

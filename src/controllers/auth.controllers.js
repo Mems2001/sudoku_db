@@ -53,11 +53,13 @@ async function login (req, res) {
         const cookie = req.cookies['sudoku21-access-token']
         // console.log(cookie)
         if (cookie) {
+            console.log('---> Anon verification')
             const data = verify(cookie , process.env.JWT_SECRET)
-            // console.log(data)
             const role = await rolesServices.findRoleById(data.role_id)
+            // console.log(data)
+            // console.log(role)
     
-            if (role.name === 'anon') {
+            if (role && role.name === 'anon') {
                 authServices.reasignGames(data.user_id , user.id)
                     .then(() => {
                         console.log('---> Games reassigned')

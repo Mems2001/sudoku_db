@@ -20,7 +20,8 @@ async function createSudokuTest (algorithm) {
                 sudoku = new Sudoku3()
                 break
         }
-        const grid = sudoku.generateSudoku()
+        sudoku.generateSudoku()
+        const grid = sudoku.grid
         let number = ''
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {

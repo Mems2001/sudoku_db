@@ -74,8 +74,7 @@ class Sudoku {
     }
 
     generateSudoku() {
-        this.solveSudoku(this.grid);
-        return this.grid;
+        this.solveSudoku(this.grid)
     }
 
     removeNumbers(grid, count) {

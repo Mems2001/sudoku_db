@@ -1,5 +1,6 @@
 class Sudoku {
     #posibilities_grid
+    grid
 
     constructor () {
         this.grid = this.#generateEmptyGrid()
@@ -158,13 +159,13 @@ class Sudoku {
     }
 
     generateSudoku() {
-    this.grid = this.#generateEmptyGrid()
-    this.#posibilities_grid = this.#generatePosibilitiesGrid() 
-    this.#solveSudoku(this.grid, this.#posibilities_grid)
-    return this.grid
-}
+        this.grid = this.#generateEmptyGrid()
+        this.#posibilities_grid = this.#generatePosibilitiesGrid() 
+        this.#solveSudoku(this.grid, this.#posibilities_grid)
+    }
 
     // Code for creating a puzzle from a full sudoku
+
     #getPossibleValues(grid, row, col) {
         const possible = new Set([1,2,3,4,5,6,7,8,9])
         // Remove numbers in the same row
@@ -204,8 +205,8 @@ class Sudoku {
     removeNumbers(grid, count) {
         let attempts = 0
         while (count > 0 && attempts < 1000) {
-            const row = Math.ceil(Math.random() * 8)
-            const col = Math.ceil(Math.random() * 8)
+            const row = Math.ceil(Math.random() * 9) - 1
+            const col = Math.ceil(Math.random() * 9) - 1
 
             if (grid[row][col] !== 0) {
                 const backup = grid[row][col]
