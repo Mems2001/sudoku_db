@@ -30,34 +30,37 @@ async function createSudokuTest (algorithm) {
                 }
             }
         }
-        // let data = await models.Sudokus.create({
-        //     id: uuid.v4(),
-        //     number,
-        //     grid: JSON.stringify(grid)
-        // }, {transaction})
-
-        // const puzzle = sudoku.removeNumbers(sudoku.grid , 40)
-        // let puzzleNumber = ''
-
-        // for (let i = 0; i < 9; i++) {
-        //     for (let j = 0; j < 9; j++) {
-        //         if (puzzle[i][j] !== 0) {
-        //             puzzleNumber += puzzle[i][j]
-        //         } else {
-        //             puzzleNumber += '0'
-        //         }
-        //     }
-        // }
-
-        // let puzzleData = await models.Puzzles.create({
-        //     id: uuid.v4(),
-        //     sudoku_id: data.id,
-        //     number: puzzleNumber,
-        //     grid: puzzle
-        // } , {transaction})
 
         await transaction.commit()
         return {grid, number}
+    } catch (error) {
+        await transaction.rollback()
+        console.log(error)
+        throw error
+    }
+}
+
+async function createPuzzleTest (grid, difficulty, algorithm) {
+    const transaction = await models.sequelize.transaction()
+
+    try {
+        let sudoku
+        switch(algorithm) {
+            case '1':
+                sudoku = new Sudoku1()
+                break
+            case '2':
+                sudoku = new Sudoku2()
+                break
+            case '3':
+                sudoku = new Sudoku3()
+                break
+        }
+        
+        // console.log('---> Creating puzzle', grid, difficulty, algorithm)
+        const puzzle = sudoku.removeNumbers(grid, (difficulty + 1)*10)
+        await transaction.commit()
+        return puzzle
     } catch (error) {
         await transaction.rollback()
         console.log(error)
@@ -96,6 +99,7 @@ async function findSudokuById (id) {
 
 module.exports = {
     createSudokuTest, 
+    createPuzzleTest,
     findRandomSudoku,
     findAllSudokus,
     findSudokuById

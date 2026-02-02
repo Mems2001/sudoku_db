@@ -14,5 +14,8 @@ router.route('/:id')
 
 router.route('/test/:algorithm')
     .get(sudokuControlles.getSudokuTest)
+    
+router.route('/test/:algorithm/puzzle')
+    .post(sudokuControlles.getPuzzleTest)
 
 module.exports = router
