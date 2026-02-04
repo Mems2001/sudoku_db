@@ -47,6 +47,10 @@ module.exports = {
         for (let i = 0; i < 6; i++) {
           const sudoku = new Sudoku()
           const puzzle = sudoku.removeNumbers(JSON.parse(sudokuE.grid) , (i+1)*10)
+          if (!puzzle) {
+            console.log(`Failed to create puzzle for sudoku ${sudokuE.id} at difficulty ${i}`)
+            continue
+          }
           let puzzle_number = ''
           for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
@@ -76,7 +80,7 @@ module.exports = {
       await transaction.commit()
     } catch (error) {
       await transaction.rollback()
-      // console.log(error)
+      console.log(error)
       throw error
     }
   },
@@ -101,6 +105,7 @@ module.exports = {
       await transaction.commit()
     } catch (error) {
       await transaction.rollback()
+      console.log(error)
       throw error
     }
   }

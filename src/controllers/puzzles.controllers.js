@@ -24,6 +24,18 @@ function getPuzzleById(req , res) {
         })
 }
 
+function getPuzzleTest (req, res) {
+    puzzlesServices.createPuzzleTest(req.body.sudoku, req.body.difficulty, req.params.algorithm)
+        .then(data => {
+            res.status(201).json(data)
+        })
+        .catch(err => {
+            res.status(400).json({
+                err
+            })
+        })
+}
+
 function getRandomPuzzle (req , res) {
     puzzlesServices.findRandomPuzzle(req.params.difficulty)
         .then(data => {
@@ -38,6 +50,7 @@ function getRandomPuzzle (req , res) {
 
 module.exports = {
     getAllPuzzles,
+    getPuzzleTest,
     getPuzzleById,
     getRandomPuzzle
 }

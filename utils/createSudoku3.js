@@ -1,14 +1,23 @@
+const { json } = require("body-parser")
+
 class Sudoku {
+    #empty_posibilities_grid
     #posibilities_grid
     grid
 
     constructor () {
         this.grid = this.#generateEmptyGrid()
         this.#posibilities_grid = this.#generatePosibilitiesGrid()
+        this.#empty_posibilities_grid = this.#generateEmptyPosibilitiesGrid()
     }
 
     #generateEmptyGrid() {
         const grid = Array.from({ length: 9 }, () => Array(9).fill(0))
+        return grid
+    }
+
+    #generateEmptyPosibilitiesGrid() {
+        const grid = Array.from({ length: 9}, () => Array.from({ length: 9}, () => 0))
         return grid
     }
 
@@ -45,6 +54,7 @@ class Sudoku {
             for (let j = 0; j < 3; j++) {
                 const r = startRow + i
                 const c = startCol + j
+                if (grid[r][c] === 0) continue
                 const index = grid[r][c].indexOf(number)
                 if (index >= 0) {
                     grid[r][c].splice(index, 1)
@@ -55,6 +65,7 @@ class Sudoku {
 
         // Same row posibilities
         for (let n = 0; n < 9; n++) {
+            if (grid[row][n] === 0) continue
             const index = grid[row][n].indexOf(number)
             if (index >= 0) {
                 grid[row][n].splice(index, 1)
@@ -63,6 +74,7 @@ class Sudoku {
         }
         // Same column posibilities
         for (let n = 0; n < 9; n++) {
+            if (grid[n][col] === 0) continue
             const index = grid[n][col].indexOf(number)
             if (index >= 0) {
                 grid[n][col].splice(index, 1)
@@ -89,10 +101,11 @@ class Sudoku {
      * @param {*} row The index of the grid array elements, wich represents a row position.
      * @param {*} col The index of the row array elements, wich represents a column position.
      */
-    #asignNumber(posibilities_grid, number, row, col) {
+    #asignNumber(posibilities_grid, number, row, col, grid) {
         // console.log('---> attempted number:', number, row, col)
         if (posibilities_grid[row][col].includes(number)) {
-            this.grid[row].splice(col, 1, number)
+            if (grid) grid[row].splice(col, 1, number)
+            else this.grid[row].splice(col, 1, number)
             return true
         } 
         // console.log('do not fit', posibilities_grid[row][col])
@@ -100,8 +113,9 @@ class Sudoku {
         
     }
 
-    #removeNumber(row, col) {
-        this.grid[row].splice(col, 1, 0)
+    #removeNumber(row, col, grid) {
+        if (grid) grid[row].splice(col, 1, 0)
+        else this.grid[row].splice(col, 1, 0)
     }
 
     /** Looks for the cell with the minimum number of posible numbers to try. If that cell has not posible numbers to try, then we are at a dead end and we return false to back-track. If it returns null, then the sudoku is solved.
@@ -112,7 +126,8 @@ class Sudoku {
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
                 if (grid[i][j] === 0) {
-                    const len = posibilities[i][j].length
+                    let len
+                    if (typeof posibilities[i][j] !== 'number') len = posibilities[i][j].length
                     if (len === 0) return { row: i, col: j, deadEnd: true } // direct dead end
                     if (len < min) {
                         min = len
@@ -166,6 +181,27 @@ class Sudoku {
 
     // Code for creating a puzzle from a full sudoku
 
+    /**
+     * This function updates the posibilities grid in order to test puzzle's solvability when removing numbers. 
+     * @param {*} grid The sudoku grid.
+     */
+    #updatePosibilitiesGrid(grid) {
+        for (let row = 0; row < 9; row++) {
+            for (let col = 0; col < 9; col++) {
+                if (typeof grid[row][col] !== 'number') {
+                    grid[row][col] = this.#getPossibleValues(grid, row, col)
+                }
+            }
+        }
+    }
+
+    /**
+     * Allows us to get the posible numbers to be placed at a given location in the grid.
+     * @param {*} grid The sudoku grid.
+     * @param {*} row The row index.
+     * @param {*} col The column index.
+     * @returns An array of posible numbers to be placed at the given location.
+     */
     #getPossibleValues(grid, row, col) {
         const possible = new Set([1,2,3,4,5,6,7,8,9])
         // Remove numbers in the same row
@@ -187,41 +223,112 @@ class Sudoku {
         return Array.from(possible)
     }
 
-    #isSolvable(grid) {
-        for (let row = 0; row < 9; row++) {
-            for (let col = 0; col < 9; col++) {
-                if (grid[row][col] === 0) {
-                    const possible = this.#getPossibleValues(grid, row, col)
-                    if (possible.length === 1) {
-                        return true
-                    }
+    /**
+     * A recursive function that counts the number of solutions for a given sudoku grid. We use this to filter solvable puzzles (the ones with a single solution).
+     * @param {*} grid The sudoku grid.
+     * @returns The number of solutions found, any number greater than 1 means the puzzle is not valid.
+     */
+    #countSolutions(grid) {
+        const cell = this.#findNextCellToTry(grid, this.#empty_posibilities_grid)
+        if (cell === null) return 1 // Means the puzzle is solved, there are not cells left to try.
+        if (cell.deadEnd) return 0 // Means that there are no posible numbers to try at any cell, so either we made a mistake placing a number or the puzzle is not solvable.
+        const {row, col} = cell
+
+        let count = 0
+        // We clone the posibilities array to avoid mutating it while we are still trying numbers at the current location. If it is modified, then if we try the next value we will have incorrect data. Remember, every try implies hypotetical information that should not affect the next tries at the same location.
+        const possibilities = [...this.#empty_posibilities_grid[row][col]]
+        for (const value of possibilities) {
+            if (!this.#asignNumber(this.#empty_posibilities_grid, value, row, col, grid)) continue
+            // console.log('---> Testing value for solvability:', value, row, col, JSON.stringify(grid))
+            const changes = this.#removeFromPosibilities(this.#empty_posibilities_grid, value, row, col)
+            const sub = this.#countSolutions(grid)
+
+            //After every try we reset the modified data.
+            grid[row][col] = 0
+            this.#revertPosibilities(this.#empty_posibilities_grid, changes)
+
+            count += sub
+            // if (count >= 2) break
+        }
+
+        return count
+    }
+
+    #isSolvable(mainGrid) {
+        const grid = JSON.parse(JSON.stringify(mainGrid))
+
+        this.#empty_posibilities_grid = this.#generateEmptyPosibilitiesGrid();
+        for (let r = 0; r < 9; r++) {
+            for (let r_col = 0; r_col < 9; r_col++) {
+                if (grid[r][r_col] === 0) {
+                    this.#empty_posibilities_grid[r][r_col] = this.#getPossibleValues(grid, r, r_col);
                 }
             }
         }
-        return false
+        
+        const solutionsCount = this.#countSolutions(grid, this.#empty_posibilities_grid)
+        // console.log(this.#empty_posibilities_grid)
+
+        // console.log('---> Solutions found:', solutionsCount)
+        return solutionsCount === 1
     }
 
 
-    removeNumbers(grid, count) {
-        let attempts = 0
-        while (count > 0 && attempts < 1000) {
-            const row = Math.ceil(Math.random() * 9) - 1
-            const col = Math.ceil(Math.random() * 9) - 1
+    removeNumbers(grid, count, previousAttempts) {
+        // count = 80
+        const auxCount = count
+        const auxGrid = JSON.parse(JSON.stringify(grid))
+        this.#empty_posibilities_grid = this.#generateEmptyPosibilitiesGrid()
+        let attempts = previousAttempts || 1
+        let deadEnds = 0
 
+        // First we generate a shuffled array of coordinates to randomly pick wich one to take a number from.
+        const coords = []
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                coords.push({ row: r, col: c })
+            }
+        }
+        const shuffledCoords = this.#shuffleArray(coords)
+
+        while (count > 0 && shuffledCoords.length > 0) {
+            const { row, col } = shuffledCoords.pop()
+
+            //We make sure there is a valid value to remove.
             if (grid[row][col] !== 0) {
                 const backup = grid[row][col]
                 grid[row][col] = 0
-
+                this.#empty_posibilities_grid[row][col] = this.#getPossibleValues(grid, row, col)
+                this.#updatePosibilitiesGrid(grid)
+                // console.log(JSON.stringify(grid))
+                
                 if (this.#isSolvable(grid)) {
+                    // console.log('is solvable')
+                    // console.log(JSON.stringify(grid))
                     count --
                 } else {
+                    // console.log('not solvable')
                     grid[row][col] = backup
+                    this.#empty_posibilities_grid[row][col] = 0
+                    this.#updatePosibilitiesGrid(grid)
+                    deadEnds ++
                 }
             }
-
-            attempts++
+            
         }
-
+        
+        // console.log('---> Dead ends =', deadEnds, ' Numbers removed =', auxCount - count)
+        if (attempts < 500 && count !== 0) {
+            // console.log('Failed operation, reverting to original grid and trying again...')
+            attempts ++
+            return this.removeNumbers(auxGrid, auxCount, attempts)
+        } else if (attempts >= 500 && count !== 0) {
+            console.log(`Max attempts (${attempts}) reached, aborting...`)
+        }
+        if (count !== 0) return
+        console.log(`---> Succesful operation with ${attempts} attempts, removed ${auxCount - count} numbers <---`)
+        // console.log(JSON.stringify(this.#empty_posibilities_grid))
+        // console.log(JSON.stringify(grid))
         return grid
     }
 

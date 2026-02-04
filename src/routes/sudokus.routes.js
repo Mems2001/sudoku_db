@@ -1,21 +1,18 @@
-const sudokuControlles = require('../controllers/sudokus.controllers');
+const sudokuControllers = require('../controllers/sudokus.controllers');
 const { authenticateSession } = require('../middlewares/session.middleware')
 
 const router = require('express').Router();
 
 router.route('/')
-    .get(sudokuControlles.getAllSudokus)
+    .get(sudokuControllers.getAllSudokus)
 
 router.route('/get_random')
-    .get(authenticateSession , sudokuControlles.getRandomSudoku)
+    .get(authenticateSession , sudokuControllers.getRandomSudoku)
         
 router.route('/:id')
-    .get(sudokuControlles.getSudokuById)
+    .get(sudokuControllers.getSudokuById)
 
 router.route('/test/:algorithm')
-    .get(sudokuControlles.getSudokuTest)
-    
-router.route('/test/:algorithm/puzzle')
-    .post(sudokuControlles.getPuzzleTest)
+    .get(sudokuControllers.getSudokuTest)
 
 module.exports = router

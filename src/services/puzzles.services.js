@@ -1,4 +1,7 @@
 const models = require('../../models')
+const Sudoku1 = require('../../utils/createSudokuP')
+const Sudoku2 = require('../../utils/createSudoku2')
+const Sudoku3 = require('../../utils/createSudoku3')
 
 async function findAllPuzzles() {
     return await models.Puzzles.findAndCountAll()
@@ -10,6 +13,34 @@ async function findPuzzleBySudokuId(sudoku_id) {
             sudoku_id
         }
     })
+}
+
+async function createPuzzleTest (grid, difficulty, algorithm) {
+    const transaction = await models.sequelize.transaction()
+
+    try {
+        let sudoku
+        switch(algorithm) {
+            case '1':
+                sudoku = new Sudoku1()
+                break
+            case '2':
+                sudoku = new Sudoku2()
+                break
+            case '3':
+                sudoku = new Sudoku3()
+                break
+        }
+        
+        // console.log('---> Creating puzzle', grid, difficulty, algorithm)
+        const puzzle = sudoku.removeNumbers(grid, (difficulty + 1)*10)
+        await transaction.commit()
+        return puzzle
+    } catch (error) {
+        await transaction.rollback()
+        console.log(error)
+        throw error
+    }
 }
 
 async function findRandomPuzzle (difficulty) {
@@ -32,6 +63,7 @@ async function findRandomPuzzle (difficulty) {
 
 module.exports = {
     findAllPuzzles,
+    createPuzzleTest,
     findPuzzleBySudokuId,
     findRandomPuzzle
 }
