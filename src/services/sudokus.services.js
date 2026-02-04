@@ -17,11 +17,11 @@ async function createSudokuTest (algorithm) {
                 sudoku = new Sudoku2()
                 break
             case '3':
-                sudoku = new Sudoku3()
+                sudoku = Sudoku3
                 break
         }
-        sudoku.generateSudoku()
-        const grid = sudoku.grid
+
+        const grid = sudoku.generateSudoku()
         let number = ''
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {

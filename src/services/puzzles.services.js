@@ -1,7 +1,5 @@
 const models = require('../../models')
-const Sudoku1 = require('../../utils/createSudokuP')
-const Sudoku2 = require('../../utils/createSudoku2')
-const Sudoku3 = require('../../utils/createSudoku3')
+const PuzzleGenerator = require('../../utils/createSudokuPuzzle')
 
 async function findAllPuzzles() {
     return await models.Puzzles.findAndCountAll()
@@ -20,7 +18,7 @@ async function createPuzzleTest (grid, difficulty) {
 
     try {      
         // console.log('---> Creating puzzle', grid, difficulty, algorithm)
-        const puzzle = Sudoku3.removeNumbers(grid, (difficulty + 1)*10)
+        const puzzle = PuzzleGenerator.removeNumbers(grid, (difficulty + 1)*10)
         await transaction.commit()
         return puzzle
     } catch (error) {

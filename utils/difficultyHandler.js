@@ -101,8 +101,42 @@ class DifficultyHandler {
         return null;
     }
 
-    #findNakedPairs() {
-
+    #findNakedPairs(grid) {
+        // 1. We need a map of all possibilities for all empty cells first
+        const possibilitiesMap = [];
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (grid[r][c] === 0) {
+                    possibilitiesMap.push({ r, c, p: this.#getPossibleValues(grid, r, c) });
+                }
+            }
+        }
+    
+        // 2. Logic: Look for two cells in the same row/col/box with the same two numbers
+        const pairs = possibilitiesMap.filter(cell => cell.p.length === 2);
+        
+        for (let i = 0; i < pairs.length; i++) {
+            for (let j = i + 1; j < pairs.length; j++) {
+                const p1 = pairs[i];
+                const p2 = pairs[j];
+            
+                // Check if they have the same numbers
+                if (p1.p[0] === p2.p[0] && p1.p[1] === p2.p[1]) {
+                    // Check if they share a unit (Row, Col, or Box)
+                    const sameRow = p1.r === p2.r;
+                    const sameCol = p1.c === p2.c;
+                    const sameBox = (Math.floor(p1.r/3) === Math.floor(p2.r/3)) && 
+                                   (Math.floor(p1.c/3) === Math.floor(p2.c/3));
+                
+                    if (sameRow || sameCol || sameBox) {
+                        // In a real solver, we would now remove p1.p numbers from other cells in that unit.
+                        // If that removal results in a new Naked Single elsewhere, the logic has progressed.
+                        return { p1, p2, type: 'Naked Pair' };
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**

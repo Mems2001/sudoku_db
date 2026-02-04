@@ -1,6 +1,7 @@
 'use strict';
 const uuid = require('uuid')
 const Sudoku = require('../utils/createSudoku3');
+const PuzzleGenerator = require('../utils/createSudokuPuzzle')
 const { Op } = require('sequelize');
 
 /** @type {import('sequelize-cli').Migration} */
@@ -22,9 +23,7 @@ module.exports = {
       let sudokus = []
       let puzzles = []
       for (let i=0 ; i < 100 ; i++) {
-        const sudoku = new Sudoku()
-        sudoku.generateSudoku()
-        const grid = sudoku.grid
+        const grid = Sudoku.generateSudoku()
         let number = '';
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
@@ -45,7 +44,7 @@ module.exports = {
 
       sudokus.forEach(sudokuE => {
         for (let i = 0; i < 6; i++) {
-          const puzzle = Sudoku.removeNumbers(JSON.parse(sudokuE.grid) , (i+1)*10)
+          const puzzle = PuzzleGenerator.removeNumbers(JSON.parse(sudokuE.grid) , (i+1)*10)
           if (!puzzle) {
             console.log(`Failed to create puzzle for sudoku ${sudokuE.id} at difficulty ${i}`)
             continue
