@@ -59,10 +59,40 @@ class Puzzle {
         return solutionsCount === 1
     }
 
+    #numbersToRemoveByDifficulty(difficulty) {
+        // console.log('---> Difficulty to determine the ammount of numbers to remove:', difficulty)
+        let ammount
 
-    static removeNumbers(grid, count, previousAttempts) {
+        switch (difficulty) {
+            case 0:
+                ammount = 10
+                break
+            case 1:
+                ammount = 20
+                break
+            case 2:
+                ammount = 45
+                break
+            case 3:
+                ammount = 50
+                break
+            case 4: 
+                ammount = 55
+                break
+            case 5:
+                ammount = 60
+                break
+        }
+
+        return ammount
+    }
+
+
+    static removeNumbers(grid, difficulty, previousAttempts) {
+        const attempts_limit = 500
         const auxInstance = new Puzzle()
         // count = 80
+        let count = auxInstance.#numbersToRemoveByDifficulty(difficulty)
         const auxCount = count
         const auxGrid = JSON.parse(JSON.stringify(grid))
         this.empty_possibilities_grid = Puzzle.generateEmptyPossibilitiesGrid()
@@ -92,6 +122,12 @@ class Puzzle {
                 if (auxInstance.#isSolvable(grid)) {
                     // console.log('is solvable')
                     // console.log(JSON.stringify(grid))
+                    const currentDiff = DifficultyHandler.getPuzzleDifficulty(grid, auxCount - count);
+                    if (difficulty > 1 && currentDiff === difficulty) {
+                        console.log(`Target difficulty ${difficulty} reached at ${auxCount - count} removals.`);
+                        break
+                    }
+
                     count --
                 } else {
                     // console.log('not solvable')
@@ -101,23 +137,20 @@ class Puzzle {
                     deadEnds ++
                 }
             }
-            
         }
         
         // console.log('---> Dead ends =', deadEnds, ' Numbers removed =', auxCount - count)
-        if (attempts < 500 && count !== 0) {
-            // console.log('Failed operation, reverting to original grid and trying again...')
+        if (attempts < attempts_limit && DifficultyHandler.getPuzzleDifficulty(grid, auxCount - count) !== difficulty) {
+            // console.log('Failed operation, reverting to original grid and trying again...', attempts)
             attempts ++
-            return this.removeNumbers(auxGrid, auxCount, attempts)
-        } else if (attempts >= 500 && count !== 0) {
+            return this.removeNumbers(auxGrid, difficulty, attempts)
+        } else if (attempts >= attempts_limit) {
             console.log(`Max attempts (${attempts}) reached, aborting...`)
+            return
         }
-        if (count !== 0) return
-        console.log(`---> Succesful operation with ${attempts} attempts, removed ${auxCount - count} numbers <---`)
+        console.log(`---> Succesful operation with ${attempts} attempts, ${auxCount - count} numbers removed <---`)
         // console.log(JSON.stringify(this.#empty_posibilities_grid))
         // console.log(JSON.stringify(grid))
-        const difficulty = DifficultyHandler.getLogicDifficulty(grid)
-        console.log(difficulty)
         return grid
     }
 }

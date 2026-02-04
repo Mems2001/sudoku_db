@@ -17,8 +17,8 @@ async function createPuzzleTest (grid, difficulty) {
     const transaction = await models.sequelize.transaction()
 
     try {      
-        // console.log('---> Creating puzzle', grid, difficulty, algorithm)
-        const puzzle = PuzzleGenerator.removeNumbers(grid, (difficulty + 1)*10)
+        // console.log('---> Creating puzzle', JSON.stringify(grid), difficulty)
+        const puzzle = PuzzleGenerator.removeNumbers(grid, difficulty)
         await transaction.commit()
         return puzzle
     } catch (error) {

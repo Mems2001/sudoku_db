@@ -111,15 +111,15 @@ class DifficultyHandler {
                 }
             }
         }
-    
+
         // 2. Logic: Look for two cells in the same row/col/box with the same two numbers
         const pairs = possibilitiesMap.filter(cell => cell.p.length === 2);
-        
+
         for (let i = 0; i < pairs.length; i++) {
             for (let j = i + 1; j < pairs.length; j++) {
                 const p1 = pairs[i];
                 const p2 = pairs[j];
-            
+
                 // Check if they have the same numbers
                 if (p1.p[0] === p2.p[0] && p1.p[1] === p2.p[1]) {
                     // Check if they share a unit (Row, Col, or Box)
@@ -127,7 +127,7 @@ class DifficultyHandler {
                     const sameCol = p1.c === p2.c;
                     const sameBox = (Math.floor(p1.r/3) === Math.floor(p2.r/3)) && 
                                    (Math.floor(p1.c/3) === Math.floor(p2.c/3));
-                
+
                     if (sameRow || sameCol || sameBox) {
                         // In a real solver, we would now remove p1.p numbers from other cells in that unit.
                         // If that removal results in a new Naked Single elsewhere, the logic has progressed.
@@ -143,7 +143,8 @@ class DifficultyHandler {
      * Simulates a human solver to rate the difficulty.
      * @returns {number} 0: Easy, 1: Medium, 2: Hard (Requires Pairs/Backtracking)
      */
-    static getLogicDifficulty(mainGrid) {
+    static getPuzzleDifficulty(mainGrid, removed_numbers) {
+        let difficulty
         const handler = new DifficultyHandler()
         let grid = JSON.parse(JSON.stringify(mainGrid));
         let totalEmpty = grid.flat().filter(v => v === 0).length;
@@ -177,10 +178,13 @@ class DifficultyHandler {
         const isFullySolved = (solvedCount === totalEmpty);
 
         if (isFullySolved) {
-            return usedHiddenSingles ? 1 : 0; // 0 = Easy, 1 = Medium
+            if (removed_numbers <= 10) difficulty = 0
+            else if (10 < removed_numbers && removed_numbers <= 20) difficulty = 1
+            else if (usedHiddenSingles && 20 <= removed_numbers && removed_numbers <= 45) difficulty = 2
         }
-        
-        return 2; // Hard: Simulated solver got stuck, requires Pairs or guessing.
+
+        // console.log('---> Difficulty determined:', difficulty, removed_numbers)
+        return difficulty
     }
 }
 
