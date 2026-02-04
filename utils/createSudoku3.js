@@ -1,4 +1,5 @@
 const { json } = require("body-parser")
+const DifficultyHandler = require('./difficultyHandler')
 
 class Sudoku {
     #empty_posibilities_grid
@@ -8,7 +9,6 @@ class Sudoku {
     constructor () {
         this.grid = this.#generateEmptyGrid()
         this.#posibilities_grid = this.#generatePosibilitiesGrid()
-        this.#empty_posibilities_grid = this.#generateEmptyPosibilitiesGrid()
     }
 
     #generateEmptyGrid() {
@@ -189,7 +189,7 @@ class Sudoku {
         for (let row = 0; row < 9; row++) {
             for (let col = 0; col < 9; col++) {
                 if (typeof grid[row][col] !== 'number') {
-                    grid[row][col] = this.#getPossibleValues(grid, row, col)
+                    grid[row][col] = Sudoku.getPossibleValues(grid, row, col)
                 }
             }
         }
@@ -202,7 +202,7 @@ class Sudoku {
      * @param {*} col The column index.
      * @returns An array of posible numbers to be placed at the given location.
      */
-    #getPossibleValues(grid, row, col) {
+    static getPossibleValues(grid, row, col) {
         const possible = new Set([1,2,3,4,5,6,7,8,9])
         // Remove numbers in the same row
         for (let j = 0; j < 9; j++) {
@@ -261,7 +261,7 @@ class Sudoku {
         for (let r = 0; r < 9; r++) {
             for (let r_col = 0; r_col < 9; r_col++) {
                 if (grid[r][r_col] === 0) {
-                    this.#empty_posibilities_grid[r][r_col] = this.#getPossibleValues(grid, r, r_col);
+                    this.#empty_posibilities_grid[r][r_col] = Sudoku.getPossibleValues(grid, r, r_col);
                 }
             }
         }
@@ -274,11 +274,12 @@ class Sudoku {
     }
 
 
-    removeNumbers(grid, count, previousAttempts) {
+    static removeNumbers(grid, count, previousAttempts) {
+        const classInstance = new Sudoku()
         // count = 80
         const auxCount = count
         const auxGrid = JSON.parse(JSON.stringify(grid))
-        this.#empty_posibilities_grid = this.#generateEmptyPosibilitiesGrid()
+        classInstance.#empty_posibilities_grid = classInstance.#generateEmptyPosibilitiesGrid()
         let attempts = previousAttempts || 1
         let deadEnds = 0
 
@@ -289,7 +290,7 @@ class Sudoku {
                 coords.push({ row: r, col: c })
             }
         }
-        const shuffledCoords = this.#shuffleArray(coords)
+        const shuffledCoords = classInstance.#shuffleArray(coords)
 
         while (count > 0 && shuffledCoords.length > 0) {
             const { row, col } = shuffledCoords.pop()
@@ -298,19 +299,19 @@ class Sudoku {
             if (grid[row][col] !== 0) {
                 const backup = grid[row][col]
                 grid[row][col] = 0
-                this.#empty_posibilities_grid[row][col] = this.#getPossibleValues(grid, row, col)
-                this.#updatePosibilitiesGrid(grid)
+                classInstance.#empty_posibilities_grid[row][col] = Sudoku.getPossibleValues(grid, row, col)
+                classInstance.#updatePosibilitiesGrid(grid)
                 // console.log(JSON.stringify(grid))
                 
-                if (this.#isSolvable(grid)) {
+                if (classInstance.#isSolvable(grid)) {
                     // console.log('is solvable')
                     // console.log(JSON.stringify(grid))
                     count --
                 } else {
                     // console.log('not solvable')
                     grid[row][col] = backup
-                    this.#empty_posibilities_grid[row][col] = 0
-                    this.#updatePosibilitiesGrid(grid)
+                    classInstance.#empty_posibilities_grid[row][col] = 0
+                    classInstance.#updatePosibilitiesGrid(grid)
                     deadEnds ++
                 }
             }
@@ -329,6 +330,8 @@ class Sudoku {
         console.log(`---> Succesful operation with ${attempts} attempts, removed ${auxCount - count} numbers <---`)
         // console.log(JSON.stringify(this.#empty_posibilities_grid))
         // console.log(JSON.stringify(grid))
+        const difficulty = DifficultyHandler.getLogicDifficulty(grid)
+        console.log(difficulty)
         return grid
     }
 

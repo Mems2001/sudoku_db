@@ -45,8 +45,7 @@ module.exports = {
 
       sudokus.forEach(sudokuE => {
         for (let i = 0; i < 6; i++) {
-          const sudoku = new Sudoku()
-          const puzzle = sudoku.removeNumbers(JSON.parse(sudokuE.grid) , (i+1)*10)
+          const puzzle = Sudoku.removeNumbers(JSON.parse(sudokuE.grid) , (i+1)*10)
           if (!puzzle) {
             console.log(`Failed to create puzzle for sudoku ${sudokuE.id} at difficulty ${i}`)
             continue

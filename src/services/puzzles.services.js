@@ -15,25 +15,12 @@ async function findPuzzleBySudokuId(sudoku_id) {
     })
 }
 
-async function createPuzzleTest (grid, difficulty, algorithm) {
+async function createPuzzleTest (grid, difficulty) {
     const transaction = await models.sequelize.transaction()
 
-    try {
-        let sudoku
-        switch(algorithm) {
-            case '1':
-                sudoku = new Sudoku1()
-                break
-            case '2':
-                sudoku = new Sudoku2()
-                break
-            case '3':
-                sudoku = new Sudoku3()
-                break
-        }
-        
+    try {      
         // console.log('---> Creating puzzle', grid, difficulty, algorithm)
-        const puzzle = sudoku.removeNumbers(grid, (difficulty + 1)*10)
+        const puzzle = Sudoku3.removeNumbers(grid, (difficulty + 1)*10)
         await transaction.commit()
         return puzzle
     } catch (error) {
