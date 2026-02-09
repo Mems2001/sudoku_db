@@ -34,20 +34,20 @@ class Puzzle {
             Utils.revertPossibilities(this.empty_possibilities_grid, changes)
 
             count += sub
-            // if (count >= 2) break
+            if (count > 1) break
         }
 
         return count
     }
 
     #isSolvable(mainGrid) {
-        const grid = JSON.parse(JSON.stringify(mainGrid))
+        const grid = mainGrid.map(row => [...row])
 
-        this.empty_possibilities_grid = Puzzle.generateEmptyPossibilitiesGrid();
+        this.empty_possibilities_grid = Puzzle.generateEmptyPossibilitiesGrid()
         for (let r = 0; r < 9; r++) {
             for (let r_col = 0; r_col < 9; r_col++) {
                 if (grid[r][r_col] === 0) {
-                    this.empty_possibilities_grid[r][r_col] = Utils.getPossibleValues(grid, r, r_col);
+                    this.empty_possibilities_grid[r][r_col] = Utils.getPossibleValues(grid, r, r_col)
                 }
             }
         }
@@ -59,46 +59,12 @@ class Puzzle {
         return solutionsCount === 1
     }
 
-    #numbersToRemoveByDifficulty(difficulty) {
-        // console.log('---> Difficulty to determine the ammount of numbers to remove:', difficulty)
-        let ammount
-
-        switch (difficulty) {
-            case 0:
-                ammount = 10
-                break
-            case 1:
-                ammount = 20
-                break
-            case 2:
-                ammount = 45
-                break
-            case 3:
-                ammount = 50
-                break
-            case 4: 
-                ammount = 55
-                break
-            case 5:
-                ammount = 60
-                break
-        }
-
-        return ammount
-    }
-
-
-    static removeNumbers(grid, difficulty, previousAttempts) {
-        const attempts_limit = 500
+    static removeNumbers(grid, difficulty) {
         const auxInstance = new Puzzle()
-        // count = 80
-        let count = auxInstance.#numbersToRemoveByDifficulty(difficulty)
-        const auxCount = count
-        const auxGrid = JSON.parse(JSON.stringify(grid))
-        this.empty_possibilities_grid = Puzzle.generateEmptyPossibilitiesGrid()
-        let attempts = previousAttempts || 1
-        let deadEnds = 0
-
+        const difficulty_conditions = DifficultyHandler.conditionsByDifficulty(difficulty)
+        let target_count = difficulty_conditions.number ?? difficulty_conditions.max
+        let attempts = 1
+        
         // First we generate a shuffled array of coordinates to randomly pick wich one to take a number from.
         const coords = []
         for (let r = 0; r < 9; r++) {
@@ -108,50 +74,42 @@ class Puzzle {
         }
         const shuffledCoords = Utils.shuffleArray(coords)
 
-        while (count > 0 && shuffledCoords.length > 0) {
-            const { row, col } = shuffledCoords.pop()
-
-            //We make sure there is a valid value to remove.
-            if (grid[row][col] !== 0) {
-                const backup = grid[row][col]
-                grid[row][col] = 0
-                this.empty_possibilities_grid[row][col] = Utils.getPossibleValues(grid, row, col)
-                Utils.updatePossibilitiesGrid(grid)
-                // console.log(JSON.stringify(grid))
-                
-                if (auxInstance.#isSolvable(grid)) {
-                    // console.log('is solvable')
-                    // console.log(JSON.stringify(grid))
-                    const currentDiff = DifficultyHandler.getPuzzleDifficulty(grid, auxCount - count);
-                    if (difficulty > 1 && currentDiff === difficulty) {
-                        console.log(`Target difficulty ${difficulty} reached at ${auxCount - count} removals.`);
-                        break
-                    }
-
-                    count --
-                } else {
-                    // console.log('not solvable')
-                    grid[row][col] = backup
-                    this.empty_possibilities_grid[row][col] = 0
-                    Utils.updatePossibilitiesGrid(grid)
-                    deadEnds ++
+        function backtrack(current_grid, index, ammount_removed) {
+            //We first check if the ammount removed fits the target. 
+            if (ammount_removed === target_count) {
+                //If so, we check if it meets the required difficulty. If it does we return the grid as a successfull puzzle, if not, we return null to trigger the backtrack.
+                if (difficulty === DifficultyHandler.getPuzzleDifficulty(current_grid, ammount_removed, difficulty_conditions)) {
+                    console.log('---> Success! puzzle obtained with difficulty: ', difficulty, ", ", ammount_removed, ' numbers removed and ', attempts, ' attempts.')
+                    return current_grid
                 }
+
+                return null
             }
-        }
-        
-        // console.log('---> Dead ends =', deadEnds, ' Numbers removed =', auxCount - count)
-        if (attempts < attempts_limit && DifficultyHandler.getPuzzleDifficulty(grid, auxCount - count) !== difficulty) {
-            // console.log('Failed operation, reverting to original grid and trying again...', attempts)
+
+            for (let i = index; i < shuffledCoords.length; i++) {
+                const {row, col} = shuffledCoords[i]
+                const backup = current_grid[row][col]
+                if (backup === 0) continue
+
+                current_grid[row][col] = 0
+
+                // Check for solvability
+                if (auxInstance.#isSolvable(current_grid)) {
+                    //If it is solvable, at this place we are sure this grid do not meet the success conditions so we start another iteration. If that is not null the the puzzle was successfuly produced and we return the grid obtained (see the previous step).
+                    const result = backtrack(current_grid, i + 1, ammount_removed + 1)
+                    if (result) return result
+                }
+
+                // If we get to this point then the puzzle is not solvable, so we backtrack.
+                // console.log('---> Failed to solve at: ', shuffledCoords[i], ' numbers removed to this point: ', ammount_removed + 1, ' backtracking...')
+                current_grid[row][col] = backup
+            }
+
             attempts ++
-            return this.removeNumbers(auxGrid, difficulty, attempts)
-        } else if (attempts >= attempts_limit) {
-            console.log(`Max attempts (${attempts}) reached, aborting...`)
-            return
+            return null
         }
-        console.log(`---> Succesful operation with ${attempts} attempts, ${auxCount - count} numbers removed <---`)
-        // console.log(JSON.stringify(this.#empty_posibilities_grid))
-        // console.log(JSON.stringify(grid))
-        return grid
+
+        return backtrack(grid, 0, 0)
     }
 }
 

@@ -1,4 +1,10 @@
 class SudokuUtils {
+    static throwRandomNumber(min, max) {
+        const pseudoRandom = Math.floor(Math.random() * (max - min))
+        // console.log(pseudoRandom)
+        return pseudoRandom + min + 1
+    }
+
     static shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -15,24 +21,27 @@ class SudokuUtils {
      * @returns An array of posible numbers to be placed at the given location.
      */
     static getPossibleValues(grid, row, col) {
-        const possible = new Set([1,2,3,4,5,6,7,8,9])
-        // Remove numbers in the same row
-        for (let j = 0; j < 9; j++) {
-            possible.delete(grid[row][j])
-        }
-        // Remove numbers in the same column
-        for (let i = 0; i < 9; i++) {
-            possible.delete(grid[i][col])
-        }
-        // Remove numbers in the same 3x3 box
+        const possible = [true, true, true, true, true, true, true, true, true, true]
+        //For quadrant checking.
         const startRow = row - row % 3
         const startCol = col - col % 3
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                possible.delete(grid[startRow + i][startCol + j])
-            }
+        
+        for (let i = 0; i < 9; i++) {
+            // Check row, column, and 3x3 box in a SINGLE loop
+            if (grid[row][i] !== 0) possible[grid[row][i]] = false;
+            if (grid[i][col] !== 0) possible[grid[i][col]] = false;
+            
+            // Box indexing logic
+            const r = startRow + Math.floor(i / 3);
+            const c = startCol + (i % 3);
+            if (grid[r][c] !== 0) possible[grid[r][c]] = false;
         }
-        return Array.from(possible)
+        
+        const result = []
+        for (let n = 1; n <= 9; n++) {
+            if (possible[n]) result.push(n)
+        }
+        return result
     }
 
     /**
@@ -150,6 +159,31 @@ class SudokuUtils {
                 else cell.push(num)
             }
         }
+    }
+
+    static checkDuplicateConstraint(constraints, new_constraint) {
+        // We iterate manually to control the return flow strictly
+        for (const c of constraints) {
+            // 1. Fast fail: If types don't match, it's not the same.
+            if (c.type !== new_constraint.type) continue;
+
+            // 2. Deep Compare: Check the actual NUMBERS inside the arrays.
+            // We assume 2 values per pair.
+            const sameRows = c.rows.includes(new_constraint.rows[0]) && c.rows.includes(new_constraint.rows[1]);
+            const sameCols = c.cols.includes(new_constraint.cols[0]) && c.cols.includes(new_constraint.cols[1]);
+
+            // For values, we sort them to ensure [1,2] is treated the same as [2,1]
+            const v1 = [...c.value].sort();
+            const v2 = [...new_constraint.value].sort();
+            const sameValues = v1[0] === v2[0] && v1[1] === v2[1];
+
+            // 3. If everything matches, it is a duplicate.
+            if (sameRows && sameCols && sameValues) {
+                return true;
+            }
+        }
+        // If we checked everyone and found no match, it is new.
+        return false;
     }
 }
 
