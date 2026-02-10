@@ -277,7 +277,7 @@ class DifficultyHandler {
      * Simulates a human solver to rate the difficulty.
      * @returns {number} 0: Easy, 1: Medium(Requires hidden singles), 2: Hard (Requires Pairs/Backtracking)
      */
-    static getPuzzleDifficulty(mainGrid, removed_numbers, difficulty_conditions) {
+    static getPuzzleDifficulty(mainGrid, removed_numbers, difficulty_conditions, possibilities_grid) {
         let difficulty
         let solvingStrategy
         const handler = new DifficultyHandler()
@@ -288,6 +288,7 @@ class DifficultyHandler {
         // Helper veriable to save forbiden values and their locations.
         let constraints = []
 
+        // Iteration logic to keep trying to solve the puzzle until no strategies are left to apply. It runs out only when the strategies are over, not when the puzzle is solved. That's how we double check if it is solvable. If this returns undefined then the puzzle is not solvable after all.
         while (true) {
             let progress = false
             // 1. (placer) Prioritize Naked Singles.

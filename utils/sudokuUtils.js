@@ -45,14 +45,14 @@ class SudokuUtils {
     }
 
     /**
-     * This function assign the number to the selected location. It also removes the number from the related arrays at posibilities grid.
+     * This function assign the number to the selected location.
      * @param {*} number The number to be assigned.
      * @param {*} row The index of the grid array elements, wich represents a row position.
      * @param {*} col The index of the row array elements, wich represents a column position.
      */
-    static asignNumber(posibilities_grid, number, row, col, grid) {
-        // console.log('---> attempted number:', number, row, col)
-        if (posibilities_grid[row][col].includes(number)) {
+    static asignNumber(possibilities_grid, number, row, col, grid) {
+        // console.log('---> attempted number:', number, row, col, JSON.stringify(possibilities_grid))
+        if (possibilities_grid[row][col].includes(number)) {
             grid[row].splice(col, 1, number)
             return true
         } 
@@ -66,7 +66,7 @@ class SudokuUtils {
         return grid
     }
 
-    /** Looks for the cell with the minimum number of posible numbers to try. If the currently checked cell has not posible numbers to try, then we are at a dead end and we return false to back-track. If it returns null, then the sudoku is solved.
+    /** Looks for the cell with the minimum number of posible numbers to try. If the currently checked cell has not posible numbers to try (empty array), then we are at a dead end and we return false to back-track. If it returns null, then the sudoku is solved.
     */
     static findNextCellToTry(grid, posibilities) {
         let min = Infinity
@@ -104,10 +104,10 @@ class SudokuUtils {
 
     /** Instead of checking for safety at each random attempted number we keep the posible numbers at each location. So, when we place any number at the sudoku grid we also remove that number from the arrays of posible numbers correspondig the same row, column and quadrant. That way any time we were to attempt a random number that random number would be guaranteed to be safe.
     * @returns An array of objects, each one contains the row and column positions, the number removed and its index within the possibilities array it came from.
-    * @param {Grid} grid The possibilities grid to be modified.
+    * @param {*} grid The possibilities grid to be modified.
     */
     static removeFromPossibilities(grid, number, row, col) {
-        const changes = []
+        let changes = []
         // Same 3x3 quadrant posibilities
         const startRow = row - row % 3
         const startCol = col - col % 3
@@ -119,6 +119,7 @@ class SudokuUtils {
                 const index = grid[r][c].indexOf(number)
                 if (index >= 0) {
                     grid[r][c].splice(index, 1)
+                    // if (grid[r][c].length === 0) grid[r][c] = 0
                     changes.push({ row: r, col: c, num: number, i: index })
                 }
             }
@@ -130,6 +131,7 @@ class SudokuUtils {
             const index = grid[row][n].indexOf(number)
             if (index >= 0) {
                 grid[row][n].splice(index, 1)
+                // if (grid[row][n].length === 0) grid[row][n] = 0
                 changes.push({ row: row, col: n, num: number, i: index })
             }
         }
@@ -139,11 +141,19 @@ class SudokuUtils {
             const index = grid[n][col].indexOf(number)
             if (index >= 0) {
                 grid[n][col].splice(index, 1)
+                // if (grid[n][col].length === 0) grid[n][col] = 0
                 changes.push({ row: n, col: col, num: number, i: index })
             }
         }
 
-        return changes
+        // This last piece of code prevents us from adding duplicated changes to the changes array. Duplicates happens when cheking for row and columns after quadrant, it is possible that in some cases the given position is aligned with other empty cells (same row or column at the same time as same quadrant). This means, we will be adding changes twice, one at the quadrant check and another at the row or column check.
+        const unique_changes = changes.filter((change, index, self) =>
+            index === self.findIndex((c) => (
+                c.row === change.row && c.col === change.col
+            ))
+        )
+
+        return {possibilities_grid: grid, changes: unique_changes}
     }
 
     /**
@@ -153,12 +163,15 @@ class SudokuUtils {
      */
     static revertPossibilities(possibilities_grid, changes) {
         for (const { row, col, num, i } of changes) {
-            const cell = possibilities_grid[row][col]
-            if (!cell.includes(num)) {
-                if (i >= 0 && i <= cell.length) cell.splice(i, 0, num)
-                else cell.push(num)
+            if (possibilities_grid[row][col] === 0) possibilities_grid[row][col] = []
+            // console.log('---> Prior to revert',possibilities_grid[row][col], row, col, JSON.stringify(possibilities_grid))
+            if (!possibilities_grid[row][col].includes(num)) {
+                if (i >= 0 && i <= possibilities_grid[row][col].length) possibilities_grid[row][col].splice(i, 0, num)
+                else possibilities_grid[row][col].push(num)
             }
         }
+
+        return {possibilities_grid, changes}
     }
 
     static checkDuplicateConstraint(constraints, new_constraint) {
@@ -184,6 +197,12 @@ class SudokuUtils {
         }
         // If we checked everyone and found no match, it is new.
         return false;
+    }
+
+    // Specific logic for puzzle creation
+
+    static updatePossibilitiesForPuzzleCreation(removed_number, position, possibilities_grid) {
+
     }
 }
 
