@@ -175,28 +175,29 @@ class SudokuUtils {
     }
 
     static checkDuplicateConstraint(constraints, new_constraint) {
+        console.log('---> Constraints for duplicate check:', JSON.stringify(constraints))
         // We iterate manually to control the return flow strictly
         for (const c of constraints) {
             // 1. Fast fail: If types don't match, it's not the same.
-            if (c.type !== new_constraint.type) continue;
+            if (c.location !== new_constraint.location) continue;
 
             // 2. Deep Compare: Check the actual NUMBERS inside the arrays.
             // We assume 2 values per pair.
-            const sameRows = c.rows.includes(new_constraint.rows[0]) && c.rows.includes(new_constraint.rows[1]);
-            const sameCols = c.cols.includes(new_constraint.cols[0]) && c.cols.includes(new_constraint.cols[1]);
+            const sameRows = c.rows.includes(new_constraint.rows[0]) && c.rows.includes(new_constraint.rows[1])
+            const sameCols = c.cols.includes(new_constraint.cols[0]) && c.cols.includes(new_constraint.cols[1])
 
             // For values, we sort them to ensure [1,2] is treated the same as [2,1]
-            const v1 = [...c.value].sort();
-            const v2 = [...new_constraint.value].sort();
+            const v1 = [...c.values].sort();
+            const v2 = [...new_constraint.values].sort();
             const sameValues = v1[0] === v2[0] && v1[1] === v2[1];
 
             // 3. If everything matches, it is a duplicate.
             if (sameRows && sameCols && sameValues) {
-                return true;
+                return true
             }
         }
         // If we checked everyone and found no match, it is new.
-        return false;
+        return false
     }
 
     // Specific logic for puzzle creation

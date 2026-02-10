@@ -30,9 +30,9 @@ class DifficultyHandler {
         if (!constraints || constraints.length === 0) return Array.from(possible)
         for (const constraint of constraints) {
             let inSameUnit = false
-            if (constraint.type === 'row' && row === constraint.rows[0]) inSameUnit = true
-            if (constraint.type === 'col' && col === constraint.cols[0]) inSameUnit = true
-            if (constraint.type === 'box') {
+            if (constraint.location === 'row' && row === constraint.rows[0]) inSameUnit = true
+            if (constraint.location === 'col' && col === constraint.cols[0]) inSameUnit = true
+            if (constraint.location === 'quadrant') {
                 const sameBox = (Math.floor(row / 3) === Math.floor(constraint.rows[0] / 3)) && (Math.floor(col / 3) === Math.floor(constraint.cols[0] / 3))
                 if (sameBox) inSameUnit = true
             }
@@ -41,8 +41,8 @@ class DifficultyHandler {
                 // If this cell is NOT one of the two cells forming the pair, remove the values
                 const isPairCell = (row === constraint.rows[0] && col === constraint.cols[0]) || (row === constraint.rows[1] && col === constraint.cols[1])
                 if (!isPairCell) {
-                    possible.delete(constraint.value[0])
-                    possible.delete(constraint.value[1])
+                    possible.delete(constraint.values[0])
+                    possible.delete(constraint.values[1])
                 }
             }
         }
@@ -186,13 +186,13 @@ class DifficultyHandler {
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
                 if (grid[r][c] === 0) {
-                    possibilitiesMap.push({ r, c, p: this.#getPossibleValues(grid, r, c, constraints) })
+                    possibilitiesMap.push({ row: r, col: c, values: this.#getPossibleValues(grid, r, c, constraints) })
                 }
             }
         }
 
         // 2. Look for two cells in the same row/col/box with the same two numbers
-        const pairs = possibilitiesMap.filter(cell => cell.p.length === 2)
+        const pairs = possibilitiesMap.filter(cell => cell.values.length === 2)
 
         for (let i = 0; i < pairs.length; i++) {
             for (let j = i + 1; j < pairs.length; j++) {
@@ -200,25 +200,25 @@ class DifficultyHandler {
                 const p2 = pairs[j]
 
                 // Check if they have the same numbers
-                if (p1.p[0] === p2.p[0] && p1.p[1] === p2.p[1]) {
+                if (p1.values[0] === p2.values[0] && p1.values[1] === p2.values[1]) {
                     // Check if they share a unit (Row, Col, or Box)
-                    const sameRow = p1.r === p2.r
-                    const sameCol = p1.c === p2.c
-                    const sameBox = (Math.floor(p1.r/3) === Math.floor(p2.r/3)) && 
-                    (Math.floor(p1.c/3) === Math.floor(p2.c/3))
+                    const sameRow = p1.row === p2.row
+                    const sameCol = p1.col === p2.col
+                    const sameBox = (Math.floor(p1.row/3) === Math.floor(p2.row/3)) && 
+                    (Math.floor(p1.col/3) === Math.floor(p2.col/3))
                     
                     if (sameRow || sameCol || sameBox) {
-                        const type = sameRow ? 'row' : (sameCol ? 'col' : 'box')
+                        const location = sameRow ? 'row' : (sameCol ? 'col' : 'quadrant')
                         const candidateConstraint = {
-                            rows: [p1.r, p2.r],
-                            cols: [p1.c, p2.c],
-                            value: p1.p,
-                            type: type
+                            rows: [p1.row, p2.row],
+                            cols: [p1.col, p2.col],
+                            values: p1.values,
+                            location
                         }
                         
                         if (!Utils.checkDuplicateConstraint(constraints, candidateConstraint)) {
                             // We would now remove p1.p numbers from other cells in that unit. If that removal results in a new Naked Single elsewhere, the logic has progressed.
-                            return { p1, p2, type };
+                            return { p1, p2, location }
                         }
                     }
                 }
@@ -328,10 +328,10 @@ class DifficultyHandler {
                 solvingStrategy = Math.max(solvingStrategy, 2)
                 // Instead of breaking, we add the pair to our "constraints", and try the loop again to see if it creates a new Single to keep solving.
                 const newConstraint = {
-                    rows: [pair.p1.r, pair.p2.r],
-                    cols: [pair.p1.c, pair.p2.c],
-                    value: pair.p1.p,
-                    type: pair.type
+                    rows: [pair.p1.row, pair.p2.row],
+                    cols: [pair.p1.col, pair.p2.col],
+                    values: pair.p1.values,
+                    location: pair.location
                 }
 
                 constraints.push(newConstraint)
