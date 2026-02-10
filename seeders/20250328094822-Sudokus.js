@@ -39,12 +39,14 @@ module.exports = {
           created_at: new Date(),
           updated_at: new Date()
         }
+        // console.log('---> Sudoku created!')
         sudokus.push(sudokuE)
       }
 
+      //Create puzzles
       sudokus.forEach(sudokuE => {
-        for (let i = 0; i < 6; i++) {
-          const puzzle = PuzzleGenerator.removeNumbers(JSON.parse(sudokuE.grid) , (i+1)*10)
+        for (let i = 0; i < 3; i++) {
+          const puzzle = PuzzleGenerator.removeNumbers(JSON.parse(sudokuE.grid) , i)
           if (!puzzle) {
             console.log(`Failed to create puzzle for sudoku ${sudokuE.id} at difficulty ${i}`)
             continue

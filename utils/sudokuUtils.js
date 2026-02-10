@@ -104,9 +104,9 @@ class SudokuUtils {
 
     /** Instead of checking for safety at each random attempted number we keep the posible numbers at each location. So, when we place any number at the sudoku grid we also remove that number from the arrays of posible numbers correspondig the same row, column and quadrant. That way any time we were to attempt a random number that random number would be guaranteed to be safe.
     * @returns An array of objects, each one contains the row and column positions, the number removed and its index within the possibilities array it came from.
-    * @param {*} grid The possibilities grid to be modified.
+    * @param {*} possibilities_grid The possibilities grid to be modified.
     */
-    static removeFromPossibilities(grid, number, row, col) {
+    static removeFromPossibilities(possibilities_grid, number, row, col) {
         let changes = []
         // Same 3x3 quadrant posibilities
         const startRow = row - row % 3
@@ -115,10 +115,10 @@ class SudokuUtils {
             for (let j = 0; j < 3; j++) {
                 const r = startRow + i
                 const c = startCol + j
-                if (grid[r][c] === 0) continue
-                const index = grid[r][c].indexOf(number)
+                if (possibilities_grid[r][c] === 0) continue
+                const index = possibilities_grid[r][c].indexOf(number)
                 if (index >= 0) {
-                    grid[r][c].splice(index, 1)
+                    possibilities_grid[r][c].splice(index, 1)
                     // if (grid[r][c].length === 0) grid[r][c] = 0
                     changes.push({ row: r, col: c, num: number, i: index })
                 }
@@ -127,20 +127,20 @@ class SudokuUtils {
 
         // Same row posibilities
         for (let n = 0; n < 9; n++) {
-            if (grid[row][n] === 0) continue
-            const index = grid[row][n].indexOf(number)
+            if (possibilities_grid[row][n] === 0) continue
+            const index = possibilities_grid[row][n].indexOf(number)
             if (index >= 0) {
-                grid[row][n].splice(index, 1)
+                possibilities_grid[row][n].splice(index, 1)
                 // if (grid[row][n].length === 0) grid[row][n] = 0
                 changes.push({ row: row, col: n, num: number, i: index })
             }
         }
         // Same column posibilities
         for (let n = 0; n < 9; n++) {
-            if (grid[n][col] === 0) continue
-            const index = grid[n][col].indexOf(number)
+            if (possibilities_grid[n][col] === 0) continue
+            const index = possibilities_grid[n][col].indexOf(number)
             if (index >= 0) {
-                grid[n][col].splice(index, 1)
+                possibilities_grid[n][col].splice(index, 1)
                 // if (grid[n][col].length === 0) grid[n][col] = 0
                 changes.push({ row: n, col: col, num: number, i: index })
             }
@@ -153,7 +153,7 @@ class SudokuUtils {
             ))
         )
 
-        return {possibilities_grid: grid, changes: unique_changes}
+        return {possibilities_grid, changes: unique_changes}
     }
 
     /**
@@ -175,7 +175,7 @@ class SudokuUtils {
     }
 
     static checkDuplicateConstraint(constraints, new_constraint) {
-        console.log('---> Constraints for duplicate check:', JSON.stringify(constraints))
+        // console.log('---> Constraints for duplicate check:', JSON.stringify(constraints))
         // We iterate manually to control the return flow strictly
         for (const c of constraints) {
             // 1. Fast fail: If types don't match, it's not the same.
@@ -204,6 +204,61 @@ class SudokuUtils {
 
     static updatePossibilitiesForPuzzleCreation(removed_number, position, possibilities_grid) {
 
+    }
+
+    static removeConstraintsFromPossibilities(possibilities_grid, constraint) {
+        console.log('---> Possibilities: ', JSON.stringify(possibilities_grid))
+        console.log('---> Constraint to remove from possibilities: ', JSON.stringify(constraint))
+        const row = constraint.p1.row
+        const row2 = constraint.p2.row
+        const col = constraint.p1.col
+        const col2 = constraint.p2.col
+        switch (constraint.location) {
+            case 'row':
+                for (let c = 0; c < 9; c++) {
+                    if (Array.isArray(possibilities_grid[row][c])) {
+                        console.log(`---> Possibilites for position (${row}, ${c}) :`, possibilities_grid[row][c])
+                        const index1 = possibilities_grid[row][c].indexOf(constraint.values[0])
+                        if (index1 >= 0 && c !== col && c !== col2) possibilities_grid[row][c].splice(index1, 1)
+                        const index2 = possibilities_grid[row][c].indexOf(constraint.values[1])
+                        if (index2 >= 0 && c !== col && c !== col2) possibilities_grid[row][c].splice(index2, 1)
+                        console.log(index1, index2)
+                    }
+                }
+                break
+            case 'col':
+                for (let r = 0; r < 9; r++) {
+                    if (Array.isArray(possibilities_grid[r][col])) {
+                        console.log(`---> Possibilites for position (${r}, ${col}) :`, possibilities_grid[r][col])
+                        const index1 = possibilities_grid[r][col].indexOf(constraint.values[0])
+                        if (index1 >= 0 && r !== row && r !== row2) possibilities_grid[r][col].splice(index1, 1)
+                        const index2 = possibilities_grid[r][col].indexOf(constraint.values[1])
+                        if (index2 >= 0 && r !== row && r !== row2) possibilities_grid[r][col].splice(index2, 1)
+                        console.log(index1, index2)
+                    }
+                }
+                break
+            case 'quadrant':
+                const row_start = row - (row % 3)
+                const col_start = col - (col % 3)
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 3; c++) {
+                        const r2 = r + row_start
+                        const c2 = c + col_start
+                        if (Array.isArray(possibilities_grid[r2][c2])) {
+                            console.log(`---> Possibilites for position (${r2}, ${c2}) :`, possibilities_grid[r2][c2])
+                            const index1 = possibilities_grid[r2][c2].indexOf(constraint.values[0])
+                            if (index1 >= 0 && (r2 !== row || c2 !== col) && (r2 !== row2 || c2 !== col2)) possibilities_grid[r2][c2].splice(index1, 1)
+                            const index2 = possibilities_grid[r2][c2].indexOf(constraint.values[1])
+                            if (index2 >= 0 && (r2 !== row || c2 !== col) && (r2 !== row2 || c2 !== col2)) possibilities_grid[r2][c2].splice(index2, 1)
+                        }
+                    }
+                }
+                break
+        }
+
+        console.log('---> Updated possibilities: ', JSON.stringify(possibilities_grid))
+        return possibilities_grid
     }
 }
 

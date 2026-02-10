@@ -46,7 +46,7 @@ class Puzzle {
     /**
      * This functions check if a given puzzle grid is solvable by finding if there is at least one solution and no more than one. 
      * @param {*} mainGrid 
-     * @returns A boolean taht answers if it is solvable or not.
+     * @returns An object with two main props. First isSolvable: A boolean that answers if it is solvable or not, and possibilities_grid: an updated grid of possibilities obtained just by elimininatig possible values for column, row and quadrant (hidden singles logic).
      */
     #isSolvable(mainGrid) {
         const grid = mainGrid.map(row => [...row])
@@ -65,7 +65,7 @@ class Puzzle {
         // console.log(this.#empty_posibilities_grid)
 
         // console.log('---> Solutions found:', solutionsCount)
-        return solutionsCount === 1
+        return {is_solvable: solutionsCount === 1, possibilities_grid}
     }
 
     static removeNumbers(grid, difficulty) {
@@ -94,6 +94,7 @@ class Puzzle {
          * @returns The puzzle grid if the requirements were met or null if not.
          */
         function backtrack(current_grid, index, ammount_removed, possibilities_grid) {
+            // console.log('---> Possibilities for backtracking:', JSON.stringify(possibilities_grid))
             // console.warn('---> Attempts left: ', 500 - attempts)
             if (attempts === max_attempts) {
                 return "limit_reached"
@@ -118,9 +119,10 @@ class Puzzle {
                 current_grid[row][col] = 0
 
                 // Check for solvability
-                if (auxInstance.#isSolvable(current_grid)) {
+                const is_solvable = auxInstance.#isSolvable(current_grid)
+                if (is_solvable.is_solvable) {
                     //If it is solvable, at this place we are sure this grid do not meet the success conditions so we start another iteration. If that is not null the the puzzle was successfuly produced and we return the grid obtained (see the previous step).
-                    const result = backtrack(current_grid, index = i + 1, ammount_removed + 1)
+                    const result = backtrack(current_grid, index = i + 1, ammount_removed + 1, is_solvable.possibilities_grid)
                     if (result === 'limit_reached') return "limit_reached"
                     if (result) return result
                 }
@@ -135,7 +137,7 @@ class Puzzle {
             return null
         }
         
-        const final_result = backtrack(grid, 0, 0)
+        const final_result = backtrack(grid, 0, 0, possibilities)
         if (final_result === 'limit_reached') {
             console.error(`---> Max attempts reached (${attempts})`)
             return null
