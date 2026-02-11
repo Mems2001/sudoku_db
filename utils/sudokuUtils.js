@@ -14,7 +14,7 @@ class SudokuUtils {
     }
 
     /**
-     * Allows us to get the posible numbers to be placed at a given location in the grid.
+     * Allows us to get the posible numbers to be placed at a given location in the grid applying the hidden singles logic. This is, removing the numbers present at the row, column and quadrant to which the location belongs.
      * @param {*} grid The sudoku grid.
      * @param {*} row The row index.
      * @param {*} col The column index.

@@ -53,14 +53,16 @@ class Puzzle {
         let possibilities_grid = Puzzle.generateEmptyPossibilitiesGrid()
         // console.log(possibilities_grid)
 
+        // Getting the possibilities grid.
         for (let row = 0; row < 9; row++) {
             for (let col = 0; col < 9; col++) {
                 if (grid[row][col] === 0) {
-                    possibilities_grid[row][col] = Utils.getPossibleValues(grid, row, col)
+                    possibilities_grid[row][col] = Utils.getPossibleValues(grid, row, col) // Hidden singles logic applied.
                 }
             }
         }
         
+        // This will serve to verify if the puzzle has the requested number of solutions, 1.
         const solutionsCount = this.#countSolutions(grid, possibilities_grid)
         // console.log(this.#empty_posibilities_grid)
 
@@ -68,14 +70,20 @@ class Puzzle {
         return {is_solvable: solutionsCount === 1, possibilities_grid}
     }
 
-    static removeNumbers(grid, difficulty) {
-        console.log('Trying yo create a puzzle with difficutly: ', difficulty)
+    /**
+     * This function is in charge to try every possible way to remove a certain ammount numbers given a grid and a target difficulty. It may not reach a solvable puzzle and that's why it has an internal limit for its iterations. The reason is that while the possible ways to remove a given ammount of numbers within a 9*9 matrix is finite but huge (Using the binomial coefficient for example, with 45 removals we got 4.384529 * 10**22 posible paths to try. So the computation is not doable in a reasonable ammount of time).
+     * @param {*} grid 
+     * @param {*} difficulty 
+     * @returns 
+     */
+    #removeNumbers(grid, difficulty) {
+        console.log('Trying to create a puzzle with difficutly: ', difficulty)
         const auxInstance = new Puzzle()
-        const difficulty_conditions = DifficultyHandler.conditionsByDifficulty(difficulty)
+        const difficulty_conditions = DifficultyHandler.conditionsByDifficulty(difficulty) // Having this here allows us to reset the target of numbers to remove on every global iteration.
         let target_count = difficulty_conditions.number ?? difficulty_conditions.max
         let attempts = 1
-        let max_attempts = 5000
-        let possibilities_grid = this.generateEmptyPossibilitiesGrid()
+        let max_attempts = 500
+        let possibilities_grid = Puzzle.generateEmptyPossibilitiesGrid()
         
         // First we generate a shuffled array of coordinates to randomly pick wich one to take a number from.
         const coords = []
@@ -84,41 +92,45 @@ class Puzzle {
                 coords.push({ row: r, col: c })
             }
         }
-        const shuffledCoords = Utils.shuffleArray(coords)
+        let shuffledCoords = Utils.shuffleArray(coords) // Having this here allows us to reorder the coordinates on every global iteration.
         let possibilities = [...possibilities_grid]
 
         /**
          * A function that iterates to check if the puzzle fits the requirements. If the puzzle is not solvable it is called again. Every iteration removes a number, if the puzzle is solvable iterates again to remove another number at a different cell. 
          * @param {*} current_grid The updated puzzle grid to be checked. Is updated at every removal/iteration and reset to defeault if backtrack failed to find a solution.
-         * @param {*} index The position at the shuffled coordinates array that is currently being checked. 
-         * @param {*} ammount_removed 
+         * @param {number} index The position at the shuffled coordinates array that is currently being checked. 
+         * @param {number} ammount_removed 
+         * @param {*} possibilities_grid
          * @returns The puzzle grid if the requirements were met or null if not.
          */
         function backtrack(current_grid, index, ammount_removed, possibilities_grid) {
             // console.log('---> Possibilities for backtracking:', JSON.stringify(possibilities_grid))
             // console.warn('---> Attempts left: ', 500 - attempts)
+
+            // 1. We verify if the loop limit was reached.
             if (attempts === max_attempts) return "limit_reached"
 
-            //We check if the ammount removed fits the target (to evaluate if the puzzle met the requierements).
+            //2. We check if the ammount removed fits the target (to then evaluate if the puzzle met the requierements).
             if (ammount_removed === target_count) {
                 //If so, we check if it meets the required difficulty. If it does we return the grid as a successfull puzzle, if not, we return null to trigger the backtrack.
                 if (difficulty === DifficultyHandler.getPuzzleDifficulty(current_grid, ammount_removed, difficulty_conditions, possibilities_grid)) {
-                    console.log('---> Success! puzzle obtained with difficulty: ', difficulty, ", ", ammount_removed, ' numbers removed and ', attempts, ' attempts.')
+                    console.log('Success! puzzle obtained with difficulty: ', difficulty, ", ", ammount_removed, ' numbers removed and ', attempts, ' local attempts.')
                     return current_grid
                 }
 
                 return null
             }
 
+            // 3. The actual recursion relies here. We loop over the list of coords to try.
             for (let i = index; i < shuffledCoords.length; i++) {
                 const {row, col} = shuffledCoords[i]
                 const backup = current_grid[row][col]
-                if (backup === 0) continue
+                if (backup === 0) continue // In case the value is 0 we ommit the rest of the logic since the number was already removed.
 
-                current_grid[row][col] = 0
+                current_grid[row][col] = 0 // Number removal.
 
-                // Check for solvability
-                const is_solvable = auxInstance.#isSolvable(current_grid)
+                // Check for solvability to decide how to iterate.
+                const is_solvable = auxInstance.#isSolvable(current_grid) // Also provides an updated possibilities grid to iterate.
                 if (is_solvable.is_solvable) {
                     //If it is solvable, at this place we are sure this grid do not meet the success conditions so we start another iteration. If that is not null the the puzzle was successfuly produced and we return the grid obtained (see the previous step).
                     const result = backtrack(current_grid, index = i + 1, ammount_removed + 1, is_solvable.possibilities_grid)
@@ -126,22 +138,53 @@ class Puzzle {
                     if (result) return result
                 }
 
-                // If we get to this point then the puzzle is not solvable, so we backtrack.
-                // console.log('---> Failed to solve at: ', shuffledCoords[i], ' numbers removed to this point: ', ammount_removed + 1, ' backtracking...')
+                // If we get to this point then the puzzle is not solvable, so we backtrack. We do not need to revert the possibilities_grid changes since #isSolvable provides an updated one each time it is called.
                 current_grid[row][col] = backup
+                // console.log('---> Failed to solve at: ', shuffledCoords[i], ' numbers removed to this point: ', ammount_removed + 1, ' backtracking...')
             }
 
-            //If the puzzle is not solvable this returns nothing and backtrack is called again but with reset values.
+            //If the puzzle is not solvable at all this returns null and backtrack is called again but with reset values.
+            // console.log('---> Attempting with the next cell')
             attempts ++
             return null
         }
         
         const final_result = backtrack(grid, 0, 0, possibilities)
         if (final_result === 'limit_reached') {
-            console.error(`---> Max attempts reached (${attempts})`)
+            console.error(`Max local attempts reached (${attempts})`)
             return null
         }
         return final_result
+    }
+
+    /**
+     * Main recursive function to create a puzzle. Given the difficulties of exploring all ways to remove a certain ammount of numbers (see removeNumbers docs) we use two main limits for the iterations. One "local" at removeNumbers and the other here. Every local iteration ocurs with the same array of shuffled coordinates, but when the local limit is reached we trigger an iteration here which creates a new array of shuffled coordinates and a new target of numbers to remove. This helps us to reduce the chances of failig to produce a puzzle, in fact, this way the algorithm is near 100% effectivity. 
+     * @param {*} sudoku_grid 
+     * @param {*} difficulty 
+     * @returns A puzzle that matches our difficulty requierements and ready to be solved.
+     */
+    static createPuzzle(sudoku_grid, difficulty) {
+        let attempts = 1
+        const max_attempts = 10
+        const auxInstance = new Puzzle()
+
+        while (attempts <= max_attempts) {
+            console.log('---> Global attempts: ', attempts)
+
+            const grid = sudoku_grid.map(row => [...row])
+
+            const puzzle = auxInstance.#removeNumbers(grid, difficulty)
+
+            if (puzzle) {
+                console.log('---> Puzzle created with ', attempts, ' global attempts.')
+                return puzzle
+            }
+
+            attempts ++
+        }
+
+        console.log('---> Critical failure on producing the puzzle, max global attempts reached: ', max_attempts)
+        return null
     }
 }
 

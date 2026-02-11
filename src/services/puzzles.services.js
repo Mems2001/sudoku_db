@@ -18,7 +18,7 @@ async function createPuzzleTest (grid, difficulty) {
 
     try {      
         // console.log('---> Creating puzzle', JSON.stringify(grid), difficulty)
-        const puzzle = PuzzleGenerator.removeNumbers(grid, difficulty)
+        const puzzle = PuzzleGenerator.createPuzzle(grid, difficulty)
         await transaction.commit()
         return puzzle
     } catch (error) {

@@ -5,7 +5,7 @@ class DifficultyHandler {
      * @param {*} grid The sudoku grid.
      * @param {*} row The row index.
      * @param {*} col The column index.
-     * @returns An array of posible numbers to be placed at the given location.
+     * @returns An array of posible numbers to be placed at the given location. An empty array if there is no possible values left. The latter is needed to future checks at #findNextCellToTry, this tells us that we reached a dead end.
      */
     #getPossibleValues(row, col, possibilities_grid) {
         // console.log('---> Possibilities grid for getting possible values: ', JSON.stringify(possibilities_grid))
@@ -39,14 +39,14 @@ class DifficultyHandler {
                 break
             case 1:
                 conditions.min = 30
-                conditions.max = 45
-                conditions.number = Utils.throwRandomNumber(30, 45)
+                conditions.max = 40
+                conditions.number = Utils.throwRandomNumber(30, 40)
                 conditions.ultLogic = 1
                 break
             case 2:
-                conditions.min = 45
+                conditions.min = 40
                 conditions.max = 50
-                conditions.number = Utils.throwRandomNumber(45, 50)
+                conditions.number = Utils.throwRandomNumber(40, 50)
                 conditions.ultLogic = 2
                 break
             case 3:
@@ -73,11 +73,10 @@ class DifficultyHandler {
     /**
      * Scans the grid for cells that have only one possible value.
      * @param {Array} grid The current 9x9 Sudoku grid.
+     * @param {*} possibilities_grid
      * @returns {Array} An array of objects {row, col, value} for every naked single found.
      */
-    #findNakedSingles(grid, possibilities_grid) {
-        const nakedSingles = []
-
+    #findHiddenSingles(grid, possibilities_grid) {
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
                 // Only check empty cells
@@ -86,27 +85,27 @@ class DifficultyHandler {
 
                     // If there's only one number that can fit here, it's a Naked Single
                     if (possibilities.length === 1) {
-                        nakedSingles.push({
+                        return {
                             row: r,
                             col: c,
                             value: possibilities[0]
-                        })
+                        }
                     }
                 }
             }
         }
-        // if (nakedSingles.length === 0) return null
-        return nakedSingles
     }
 
     /**
      * A number that can only fit in one spot within a row, column, or box.
+     * @param {*} grid 
+     * @param {*} possibilities_grid 
      */
-    #findHiddenSingles(grid, possibilities_grid) {
+    #findNakedSingles(grid, possibilities_grid) {
         for (let num = 1; num <= 9; num++) {
             // Check Rows
             for (let r = 0; r < 9; r++) {
-                let possibleCols = [];
+                let possibleCols = []
                 for (let c = 0; c < 9; c++) {
                     if (grid[r][c] === 0 && this.#getPossibleValues(r, c, possibilities_grid).includes(num)) {
                         possibleCols.push(c)
@@ -242,7 +241,11 @@ class DifficultyHandler {
     }
 
     /**
-     * Simulates a human solver to rate the difficulty.
+     * Simulates a human solver to rate the difficulty of a given puzzle.
+     * @param {*} mainGrid The puzzle to be tested.
+     * @param {number} removed_numbers The ammount of numbers removed to this point.
+     * @param {*} difficulty_conditions An object which contains: {min: the minimun ammount of numbers to be removed, max: the maximum ammount of numbers to be removed, number: the targeted ammount of numbers to be removed, ultLogic: the main strategy expected to this difficulty}.
+     * @param {*} possibilities_grid The grid of possible values to be placed at each location. Obtained by hidden simples logic.
      * @returns {number} 0: Easy, 1: Medium(Requires hidden singles), 2: Hard (Requires Pairs/Backtracking)
      */
     static getPuzzleDifficulty(mainGrid, removed_numbers, difficulty_conditions, possibilities_grid) {
@@ -259,39 +262,37 @@ class DifficultyHandler {
             let progress = false
             // 1. (placer) Prioritize Naked Singles.
             const singles = handler.#findNakedSingles(grid, possibilities_grid)
-            if (singles.length > 0) {
+            if (singles) {
+                // console.log(hidden)
+                const {row, col, value} = singles
+                grid[row][col] = value
+                solvedCount ++
+                progress = true
+                const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
+                possibilities_grid = updated_possibilities.possibilities_grid
+                if (!solvingStrategy) solvingStrategy = 0
+                continue // Found something, iterate again to try with updated data.
+            }
+
+            // 2. (placer) If step 1 found nothing then we look for Hidden Singles.
+            const hidden = handler.#findHiddenSingles(grid, possibilities_grid)
+            if (hidden) {
                 // console.log(singles)
-                const {row, col, value} = singles[0]
+                const {row, col, value} = hidden
                 if (grid[row][col] === 0) {
                     grid[row][col] = value
                     solvedCount ++
                     progress = true
-                    const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col)
+                    const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
                     possibilities_grid = updated_possibilities.possibilities_grid
-                    if (!solvingStrategy) solvingStrategy = 0
-                    continue
+                    solvingStrategy = Math.max(solvingStrategy, 1)
+                    continue // Call another iteration with now updated data.
                 }
-            }
-
-            // 2. (placer) If stuck, look for Hidden Singles.
-            const hidden = handler.#findHiddenSingles(grid, possibilities_grid)
-            if (hidden) {
-                // console.log(hidden)
-                const {row, col, value} = hidden
-                grid[row][col] = value
-                solvedCount ++
-                solvingStrategy = Math.max(solvingStrategy, 1)
-                progress = true
-                const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col)
-                possibilities_grid = updated_possibilities.possibilities_grid
-                continue // Found something, then go back to check for new Naked Singles.
             }
 
             // 3. (remover) If stuck we now look for naked pairs. 
             const pair = handler.#findNakedPair(grid, possibilities_grid)
             if (pair) {
-                // If a pair is found, it means the puzzle is at least 'Normal' (Level 2)
-                solvingStrategy = Math.max(solvingStrategy, 2)
                 // Instead of breaking, we add the pair to our "constraints", and try the loop again to see if it creates a new Single to keep solving.
                 const new_constraint = {
                     p1: pair.p1,
@@ -299,11 +300,12 @@ class DifficultyHandler {
                     values: pair.p1.values,
                     location: pair.location
                 }
-
+                
                 const updated_posibilites = Utils.removeConstraintsFromPossibilities(possibilities_grid, new_constraint)
                 // Double check if progress was made. The first check is at isConstraintUseful insithe #findNakedPairs
-                if (JSON.stringify(possibilities_grid) === JSON.stringify(updated_posibilites)) continue
+                if (JSON.stringify(possibilities_grid) === JSON.stringify(updated_posibilites)) break
                 possibilities_grid = updated_posibilites
+                solvingStrategy = Math.max(solvingStrategy, 2)
                 progress = true
                 continue
             }
@@ -318,8 +320,8 @@ class DifficultyHandler {
             // console.log('---> fully solved')
             // console.log('--->', removed_numbers, difficulty_conditions, auxDifficulty)
             if (removed_numbers === difficulty_conditions.number) difficulty = 0 //novice
-            if ((removed_numbers === difficulty_conditions.number && removed_numbers > 30) || solvingStrategy === 1) difficulty = 1 //easy
-            if (removed_numbers === difficulty_conditions.number && solvingStrategy === 2) difficulty = 2 //normal
+            if ((removed_numbers === difficulty_conditions.number && difficulty_conditions.number >= 30) || solvingStrategy === 1) difficulty = 1 //easy
+            if (removed_numbers === difficulty_conditions.number && (solvingStrategy === 2 || solvingStrategy === 1)) difficulty = 2 //normal
         }
 
         // console.log('---> Difficulty determined:', difficulty, removed_numbers)

@@ -46,7 +46,7 @@ module.exports = {
       //Create puzzles
       sudokus.forEach(sudokuE => {
         for (let i = 0; i < 3; i++) {
-          const puzzle = PuzzleGenerator.removeNumbers(JSON.parse(sudokuE.grid) , i)
+          const puzzle = PuzzleGenerator.createPuzzle(JSON.parse(sudokuE.grid) , i)
           if (!puzzle) {
             console.log(`Failed to create puzzle for sudoku ${sudokuE.id} at difficulty ${i}`)
             continue
