@@ -174,31 +174,51 @@ class SudokuUtils {
         return {possibilities_grid, changes}
     }
 
-    static checkDuplicateConstraint(constraints, new_constraint) {
-        // console.log('---> Constraints for duplicate check:', JSON.stringify(constraints))
-        // We iterate manually to control the return flow strictly
-        for (const c of constraints) {
-            // 1. Fast fail: If types don't match, it's not the same.
-            if (c.location !== new_constraint.location) continue;
+    static isConstraintUseful(possibilities_grid, constraint) {
+    // DESTRUCTURING: This expects constraint to have p1, p2 properties
+    const { p1, p2, values } = constraint; 
+    const [v1, v2] = values;
 
-            // 2. Deep Compare: Check the actual NUMBERS inside the arrays.
-            // We assume 2 values per pair.
-            const sameRows = c.rows.includes(new_constraint.rows[0]) && c.rows.includes(new_constraint.rows[1])
-            const sameCols = c.cols.includes(new_constraint.cols[0]) && c.cols.includes(new_constraint.cols[1])
+    // Helper to check a specific cell
+    const canPrune = (r, c) => {
+        const cell = possibilities_grid[r][c];
+        if (!Array.isArray(cell)) return false;
+        
+        // Skip the pair cells themselves
+        const isP1 = (r === p1.row && c === p1.col);
+        const isP2 = (r === p2.row && c === p2.col);
+        if (isP1 || isP2) return false;
 
-            // For values, we sort them to ensure [1,2] is treated the same as [2,1]
-            const v1 = [...c.values].sort();
-            const v2 = [...new_constraint.values].sort();
-            const sameValues = v1[0] === v2[0] && v1[1] === v2[1];
+        return cell.includes(v1) || cell.includes(v2);
+    };
 
-            // 3. If everything matches, it is a duplicate.
-            if (sameRows && sameCols && sameValues) {
-                return true
+    // 1. Check Row (if they share it)
+    if (p1.row === p2.row) {
+        for (let c = 0; c < 9; c++) if (canPrune(p1.row, c)) return true;
+    }
+
+    // 2. Check Column (if they share it)
+    if (p1.col === p2.col) {
+        for (let r = 0; r < 9; r++) if (canPrune(r, p1.col)) return true;
+    }
+
+    // 3. Check Quadrant (if they share it)
+    const rStart1 = p1.row - (p1.row % 3);
+    const cStart1 = p1.col - (p1.col % 3);
+    const rStart2 = p2.row - (p2.row % 3);
+    const cStart2 = p2.col - (p2.col % 3);
+
+    // Only check box if they are in the same box
+    if (rStart1 === rStart2 && cStart1 === cStart2) {
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                if (canPrune(rStart1 + r, cStart1 + c)) return true;
             }
         }
-        // If we checked everyone and found no match, it is new.
-        return false
     }
+
+    return false;
+}
 
     // Specific logic for puzzle creation
 
@@ -207,8 +227,8 @@ class SudokuUtils {
     }
 
     static removeConstraintsFromPossibilities(possibilities_grid, constraint) {
-        console.log('---> Possibilities: ', JSON.stringify(possibilities_grid))
-        console.log('---> Constraint to remove from possibilities: ', JSON.stringify(constraint))
+        // console.log('---> Possibilities: ', JSON.stringify(possibilities_grid))
+        // console.log('---> Constraint to remove from possibilities: ', JSON.stringify(constraint))
         const row = constraint.p1.row
         const row2 = constraint.p2.row
         const col = constraint.p1.col
@@ -217,27 +237,25 @@ class SudokuUtils {
             case 'row':
                 for (let c = 0; c < 9; c++) {
                     if (Array.isArray(possibilities_grid[row][c])) {
-                        console.log(`---> Possibilites for position (${row}, ${c}) :`, possibilities_grid[row][c])
+                        // console.log(`---> Possibilites for position (${row}, ${c}) :`, possibilities_grid[row][c])
                         const index1 = possibilities_grid[row][c].indexOf(constraint.values[0])
                         if (index1 >= 0 && c !== col && c !== col2) possibilities_grid[row][c].splice(index1, 1)
                         const index2 = possibilities_grid[row][c].indexOf(constraint.values[1])
                         if (index2 >= 0 && c !== col && c !== col2) possibilities_grid[row][c].splice(index2, 1)
-                        console.log(index1, index2)
+                        // console.log(index1, index2)
                     }
                 }
-                break
             case 'col':
                 for (let r = 0; r < 9; r++) {
                     if (Array.isArray(possibilities_grid[r][col])) {
-                        console.log(`---> Possibilites for position (${r}, ${col}) :`, possibilities_grid[r][col])
+                        // console.log(`---> Possibilites for position (${r}, ${col}) :`, possibilities_grid[r][col])
                         const index1 = possibilities_grid[r][col].indexOf(constraint.values[0])
                         if (index1 >= 0 && r !== row && r !== row2) possibilities_grid[r][col].splice(index1, 1)
                         const index2 = possibilities_grid[r][col].indexOf(constraint.values[1])
                         if (index2 >= 0 && r !== row && r !== row2) possibilities_grid[r][col].splice(index2, 1)
-                        console.log(index1, index2)
+                        // console.log(index1, index2)
                     }
                 }
-                break
             case 'quadrant':
                 const row_start = row - (row % 3)
                 const col_start = col - (col % 3)
@@ -246,7 +264,7 @@ class SudokuUtils {
                         const r2 = r + row_start
                         const c2 = c + col_start
                         if (Array.isArray(possibilities_grid[r2][c2])) {
-                            console.log(`---> Possibilites for position (${r2}, ${c2}) :`, possibilities_grid[r2][c2])
+                            // console.log(`---> Possibilites for position (${r2}, ${c2}) :`, possibilities_grid[r2][c2])
                             const index1 = possibilities_grid[r2][c2].indexOf(constraint.values[0])
                             if (index1 >= 0 && (r2 !== row || c2 !== col) && (r2 !== row2 || c2 !== col2)) possibilities_grid[r2][c2].splice(index1, 1)
                             const index2 = possibilities_grid[r2][c2].indexOf(constraint.values[1])
@@ -254,10 +272,9 @@ class SudokuUtils {
                         }
                     }
                 }
-                break
         }
 
-        console.log('---> Updated possibilities: ', JSON.stringify(possibilities_grid))
+        // console.log('---> Updated possibilities: ', JSON.stringify(possibilities_grid))
         return possibilities_grid
     }
 }

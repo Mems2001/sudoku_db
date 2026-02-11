@@ -69,11 +69,12 @@ class Puzzle {
     }
 
     static removeNumbers(grid, difficulty) {
+        console.log('Trying yo create a puzzle with difficutly: ', difficulty)
         const auxInstance = new Puzzle()
         const difficulty_conditions = DifficultyHandler.conditionsByDifficulty(difficulty)
         let target_count = difficulty_conditions.number ?? difficulty_conditions.max
         let attempts = 1
-        let max_attempts = 500
+        let max_attempts = 5000
         let possibilities_grid = this.generateEmptyPossibilitiesGrid()
         
         // First we generate a shuffled array of coordinates to randomly pick wich one to take a number from.
@@ -96,9 +97,7 @@ class Puzzle {
         function backtrack(current_grid, index, ammount_removed, possibilities_grid) {
             // console.log('---> Possibilities for backtracking:', JSON.stringify(possibilities_grid))
             // console.warn('---> Attempts left: ', 500 - attempts)
-            if (attempts === max_attempts) {
-                return "limit_reached"
-            }
+            if (attempts === max_attempts) return "limit_reached"
 
             //We check if the ammount removed fits the target (to evaluate if the puzzle met the requierements).
             if (ammount_removed === target_count) {

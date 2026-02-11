@@ -7,49 +7,10 @@ class DifficultyHandler {
      * @param {*} col The column index.
      * @returns An array of posible numbers to be placed at the given location.
      */
-    #getPossibleValues(grid, row, col, constraints, possibilities_grid) {
-        const possible = new Set([1,2,3,4,5,6,7,8,9])
-        // Remove numbers in the same row
-        for (let j = 0; j < 9; j++) {
-            possible.delete(grid[row][j])
-        }
-        // Remove numbers in the same column
-        for (let i = 0; i < 9; i++) {
-            possible.delete(grid[i][col])
-        }
-        // Remove numbers in the same 3x3 box
-        const startRow = row - row % 3
-        const startCol = col - col % 3
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                possible.delete(grid[startRow + i][startCol + j])
-            }
-        }
-
-        //Apply constraints
-        if (!constraints || constraints.length === 0) return Array.from(possible)
-        for (const constraint of constraints) {
-            let inSameUnit = false
-            if (constraint.location === 'row' && row === constraint.rows[0]) inSameUnit = true
-            if (constraint.location === 'col' && col === constraint.cols[0]) inSameUnit = true
-            if (constraint.location === 'quadrant') {
-                const sameBox = (Math.floor(row / 3) === Math.floor(constraint.rows[0] / 3)) && (Math.floor(col / 3) === Math.floor(constraint.cols[0] / 3))
-                if (sameBox) inSameUnit = true
-            }
-
-            if (inSameUnit) {
-                // If this cell is NOT one of the two cells forming the pair, remove the values
-                const isPairCell = (row === constraint.rows[0] && col === constraint.cols[0]) || (row === constraint.rows[1] && col === constraint.cols[1])
-                if (!isPairCell) {
-                    possible.delete(constraint.values[0])
-                    possible.delete(constraint.values[1])
-                }
-            }
-        }
-
-        //With possibilities grid
-        const result = possibilities_grid[row][col]
-        console.log('---> Possible values from possibilities grid: ', result)
+    #getPossibleValues(row, col, possibilities_grid) {
+        // console.log('---> Possibilities grid for getting possible values: ', JSON.stringify(possibilities_grid))
+        const result = possibilities_grid[row][col] ?? []
+        // console.log('---> Possible values from possibilities grid: ', result)
 
         // return { result: Array.from(possible), result2: result}
         return result
@@ -99,8 +60,8 @@ class DifficultyHandler {
                 conditions.ultLogic = 4
                 break
             case 5:
-                conditions.min = 58
-                conditions.max = 54
+                conditions.min = 54
+                conditions.max = 58
                 conditions.ultLogic = 5
                 break
         }
@@ -114,14 +75,14 @@ class DifficultyHandler {
      * @param {Array} grid The current 9x9 Sudoku grid.
      * @returns {Array} An array of objects {row, col, value} for every naked single found.
      */
-    #findNakedSingles(grid, constraints, possibilities_grid) {
+    #findNakedSingles(grid, possibilities_grid) {
         const nakedSingles = []
 
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
                 // Only check empty cells
                 if (grid[r][c] === 0) {
-                    const possibilities = this.#getPossibleValues(grid, r, c, constraints, possibilities_grid)
+                    const possibilities = this.#getPossibleValues(r, c, possibilities_grid)
 
                     // If there's only one number that can fit here, it's a Naked Single
                     if (possibilities.length === 1) {
@@ -141,13 +102,13 @@ class DifficultyHandler {
     /**
      * A number that can only fit in one spot within a row, column, or box.
      */
-    #findHiddenSingles(grid, constraints, possibilities_grid) {
+    #findHiddenSingles(grid, possibilities_grid) {
         for (let num = 1; num <= 9; num++) {
             // Check Rows
             for (let r = 0; r < 9; r++) {
                 let possibleCols = [];
                 for (let c = 0; c < 9; c++) {
-                    if (grid[r][c] === 0 && this.#getPossibleValues(grid, r, c, constraints, possibilities_grid).includes(num)) {
+                    if (grid[r][c] === 0 && this.#getPossibleValues(r, c, possibilities_grid).includes(num)) {
                         possibleCols.push(c)
                     }
                 }
@@ -158,7 +119,7 @@ class DifficultyHandler {
             for (let c = 0; c < 9; c++) {
                 let possibleRows = []
                 for (let r = 0; r < 9; r++) {
-                    if (grid[r][c] === 0 && this.#getPossibleValues(grid, r, c, constraints, possibilities_grid).includes(num)) {
+                    if (grid[r][c] === 0 && this.#getPossibleValues(r, c, possibilities_grid).includes(num)) {
                         possibleRows.push(r)
                     }
                 }
@@ -173,7 +134,7 @@ class DifficultyHandler {
                 for (let i = 0; i < 3; i++) {
                     for (let j = 0; j < 3; j++) {
                         let r = startR + i, c = startC + j
-                        if (grid[r][c] === 0 && this.#getPossibleValues(grid, r, c, constraints, possibilities_grid).includes(num)) {
+                        if (grid[r][c] === 0 && this.#getPossibleValues(r, c, possibilities_grid).includes(num)) {
                             possibleCells.push({ r, c })
                         }
                     }
@@ -185,13 +146,13 @@ class DifficultyHandler {
     }
 
     // Look for two cells with the same two posible numbers. This means those can be removed as posibilities for all the other cells in the same row, column or quadrant.
-    #findNakedPair(grid, constraints, possibilities_grid) {
+    #findNakedPair(grid, possibilities_grid) {
         //1. We need a map of all possibilities for all empty cells first
         const possibilitiesMap = []
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
                 if (grid[r][c] === 0) {
-                    possibilitiesMap.push({ row: r, col: c, values: this.#getPossibleValues(grid, r, c, constraints, possibilities_grid) })
+                    possibilitiesMap.push({ row: r, col: c, values: this.#getPossibleValues(r, c, possibilities_grid) })
                 }
             }
         }
@@ -215,16 +176,18 @@ class DifficultyHandler {
                     if (sameRow || sameCol || sameBox) {
                         const location = sameRow ? 'row' : (sameCol ? 'col' : 'quadrant')
                         const candidateConstraint = {
-                            rows: [p1.row, p2.row],
-                            cols: [p1.col, p2.col],
+                            p1,          // Pass the entire cell object
+                            p2,          // Pass the entire cell object
                             values: p1.values,
                             location
                         }
                         
-                        if (!Utils.checkDuplicateConstraint(constraints, candidateConstraint)) {
+                        if (Utils.isConstraintUseful(possibilities_grid, candidateConstraint)) {
                             // We would now remove p1.p numbers from other cells in that unit. If that removal results in a new Naked Single elsewhere, the logic has progressed.
-                            return { p1, p2, location }
+                            return { p1, p2, values: p1.values, location }
                         }
+
+                        // return { p1, p2, location }
                     }
                 }
             }
@@ -235,7 +198,7 @@ class DifficultyHandler {
     /**
      * Pointing Pairs/Triples (Locked Candidates Type 1). If all candidates for a number in a box are restricted to a single row or column, that number can be removed from the rest of that row or column outside the box.
      */
-    #findPointingPairTriple(grid, constraints) {
+    #findPointingPairTriple(grid, possibilities_grid) {
         for (let b = 0; b < 9; b++) {
             const startR = Math.floor(b / 3) * 3
             const startC = (b % 3) * 3
@@ -248,7 +211,7 @@ class DifficultyHandler {
                     for (let j = 0; j < 3; j++) {
                         let r = startR + i
                         let c = startC + j
-                        if (grid[r][c] === 0 && this.#getPossibleValues(grid, r, c, constraints).includes(num)) {
+                        if (grid[r][c] === 0 && this.#getPossibleValues(r, c, possibilities_grid).includes(num)) {
                             possibleCells.push({ r, c })
                         }
                     }
@@ -291,36 +254,27 @@ class DifficultyHandler {
         let totalEmpty = grid.flat().filter(v => v === 0).length
         let solvedCount = 0
 
-        // Helper veriable to save forbiden values and their locations.
-        let constraints = []
-        let changes = []
-
         // Iteration logic to keep trying to solve the puzzle until no strategies are left to apply. It runs out only when the strategies are over, not when the puzzle is solved. That's how we double check if it is solvable. If this returns undefined then the puzzle is not solvable after all.
         while (true) {
             let progress = false
             // 1. (placer) Prioritize Naked Singles.
-            const singles = handler.#findNakedSingles(grid, constraints, possibilities_grid)
+            const singles = handler.#findNakedSingles(grid, possibilities_grid)
             if (singles.length > 0) {
                 // console.log(singles)
-                singles.forEach(s => {
-                    const {row, col, value} = s
-                    if (grid[row][col] === 0) {
-                        grid[row][col] = value
-                        solvedCount ++
-                        progress = true
-                        const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col)
-                        possibilities_grid = updated_possibilities.possibilities_grid
-                        if (!solvingStrategy) solvingStrategy = 0
-                    }
-                })
-                if (progress) {
-                    constraints = [] // Reset constraints because the board changed
+                const {row, col, value} = singles[0]
+                if (grid[row][col] === 0) {
+                    grid[row][col] = value
+                    solvedCount ++
+                    progress = true
+                    const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col)
+                    possibilities_grid = updated_possibilities.possibilities_grid
+                    if (!solvingStrategy) solvingStrategy = 0
                     continue
                 }
             }
 
             // 2. (placer) If stuck, look for Hidden Singles.
-            const hidden = handler.#findHiddenSingles(grid, constraints, possibilities_grid)
+            const hidden = handler.#findHiddenSingles(grid, possibilities_grid)
             if (hidden) {
                 // console.log(hidden)
                 const {row, col, value} = hidden
@@ -330,22 +284,15 @@ class DifficultyHandler {
                 progress = true
                 const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col)
                 possibilities_grid = updated_possibilities.possibilities_grid
-                constraints = []
                 continue // Found something, then go back to check for new Naked Singles.
             }
 
             // 3. (remover) If stuck we now look for naked pairs. 
-            const pair = handler.#findNakedPair(grid, constraints, possibilities_grid)
+            const pair = handler.#findNakedPair(grid, possibilities_grid)
             if (pair) {
                 // If a pair is found, it means the puzzle is at least 'Normal' (Level 2)
                 solvingStrategy = Math.max(solvingStrategy, 2)
                 // Instead of breaking, we add the pair to our "constraints", and try the loop again to see if it creates a new Single to keep solving.
-                const newConstraint = {
-                    rows: [pair.p1.row, pair.p2.row],
-                    cols: [pair.p1.col, pair.p2.col],
-                    values: pair.p1.values,
-                    location: pair.location
-                }  
                 const new_constraint = {
                     p1: pair.p1,
                     p2: pair.p2,
@@ -354,8 +301,9 @@ class DifficultyHandler {
                 }
 
                 const updated_posibilites = Utils.removeConstraintsFromPossibilities(possibilities_grid, new_constraint)
+                // Double check if progress was made. The first check is at isConstraintUseful insithe #findNakedPairs
+                if (JSON.stringify(possibilities_grid) === JSON.stringify(updated_posibilites)) continue
                 possibilities_grid = updated_posibilites
-                constraints.push(newConstraint)
                 progress = true
                 continue
             }
