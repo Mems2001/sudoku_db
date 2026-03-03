@@ -273,7 +273,7 @@ async function playerConnectById(player_id) {
             }
         })
 
-        await player.update({is_connected:true}, {transaction})
+        await player.update({isConnected:true}, {transaction})
 
         await transaction.commit()
     } catch (error) {
@@ -283,7 +283,7 @@ async function playerConnectById(player_id) {
     }
 }
 
-async function playerDisconectById(player_id, host) {
+async function playerDisconnectById(player_id, host) {
     const transaction = await models.sequelize.transaction()
 
     try {
@@ -293,7 +293,8 @@ async function playerDisconectById(player_id, host) {
             }
         })
 
-        await player.update({is_connected:false, host}, {transaction})
+        await player.update({isConnected:false, host}, {transaction})
+        console.log('---> player ', player.id, ' is now disconnected: ', !player.isConnected)
 
         await transaction.commit()
     } catch (error) {
@@ -319,7 +320,7 @@ module.exports = {
     playerConnectById,
     findPlayerByUserId,
     findPlayersByGameId,
-    playerDisconectById,
+    playerDisconnectById,
     updatePlayerHostById,
     updatePlayerByGameId,
     createPlayerByUserId,

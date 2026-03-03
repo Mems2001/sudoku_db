@@ -91,9 +91,9 @@ module.exports = {
         }
       } , {transaction});
 
-      (await transaction).commit()
+      await transaction.commit()
     } catch(error) {
-      (await transaction).rollback()
+      await transaction.rollback()
       throw error
     }
   },

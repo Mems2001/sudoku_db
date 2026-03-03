@@ -25,18 +25,18 @@ class Puzzle {
         for (const value of possibilities) {
             if (!Utils.asignNumber(possibilities_grid, value, row, col, grid)) continue
             // console.log('---> Testing value for solvability:', value, row, col, JSON.stringify(grid))
-            const new_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col)
+            const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col)
+
+            possibilities_grid = updated_possibilities.possibilities_grid
             // console.log('---> Updated possibilities:', JSON.stringify(new_possibilities))
-            possibilities_grid = new_possibilities.possibilities_grid
-            const changes = new_possibilities.changes
             const sub = this.#countSolutions(grid, possibilities_grid)
+            count += sub
 
             //After every try we reset the modified data.
             grid[row][col] = 0
-            possibilities_grid = Utils.revertPossibilities(possibilities_grid, changes).possibilities_grid
+            possibilities_grid = Utils.revertPossibilities(possibilities_grid, updated_possibilities.changes).possibilities_grid
             // console.log('---> After reverting:', JSON.stringify(possibilities_grid))
-
-            count += sub
+            
             if (count > 1) break
         }
 
@@ -108,13 +108,15 @@ class Puzzle {
             // console.warn('---> Attempts left: ', 500 - attempts)
 
             // 1. We verify if the loop limit was reached.
-            if (attempts === max_attempts) return "limit_reached"
+            if (attempts >= max_attempts) return "limit_reached"
 
             //2. We check if the ammount removed fits the target (to then evaluate if the puzzle met the requierements).
             if (ammount_removed === target_count) {
                 //If so, we check if it meets the required difficulty. If it does we return the grid as a successfull puzzle, if not, we return null to trigger the backtrack.
-                if (difficulty === DifficultyHandler.getPuzzleDifficulty(current_grid, ammount_removed, difficulty_conditions, possibilities_grid)) {
-                    console.log('Success! puzzle obtained with difficulty: ', difficulty, ", ", ammount_removed, ' numbers removed and ', attempts, ' local attempts.')
+                const auxDiff = DifficultyHandler.getPuzzleDifficulty(current_grid, ammount_removed, difficulty_conditions, possibilities_grid)
+                // console.log('---> Difficulty obtained: ', auxDiff.difficulty, ammount_removed, ' and strategies used: ', auxDiff.strategies_used)
+                if (difficulty === auxDiff.difficulty) {
+                    console.log('Success! puzzle obtained with difficulty: ', difficulty, ", ", ammount_removed, ' numbers removed and ', attempts, ' local attempts. Strategies used: ', auxDiff.strategies_used)
                     return current_grid
                 }
 

@@ -27,7 +27,7 @@ const initializeSocket = (server) => {
       console.log(parsedCookies)
       if (accessCookie) {
         var user_data = verify(accessCookie , process.env.JWT_SECRET)
-        // console.log(user_data)
+        console.log('---> User identified: ', user_data)
       } else {
         var user_data = undefined
       }
@@ -165,7 +165,7 @@ const initializeSocket = (server) => {
 
             const player = await PlayersService.findPlayerByGameIdUserId(game.id, user_data.user_id)
             //Host reasignation process.
-            console.log("---> Host reasignation process")
+            console.log("---> Host reasignation verification...")
             // console.log("---> :", player, game)
             if (player && player.host) {
               var players = await PlayersService.findConnectedPlayersByGameId(room)
@@ -188,11 +188,12 @@ const initializeSocket = (server) => {
               if (players && players.length > 1) {
                 host = false
               }
-              await PlayersService.playerDisconectById(player.id, host)
+              await PlayersService.playerDisconnectById(player.id, host)
               console.log(`---> player ${player.id} removed from room ${room}, player status updated.`)
             }
 
             players = await PlayersService.findConnectedPlayersByGameId(room)
+            console.log('---> updated players:' , players)
             io.to(room).emit('updated-players' , players)
           }
       
