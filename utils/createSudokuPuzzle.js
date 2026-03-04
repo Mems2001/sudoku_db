@@ -82,7 +82,7 @@ class Puzzle {
         const difficulty_conditions = DifficultyHandler.conditionsByDifficulty(difficulty) // Having this here allows us to reset the target of numbers to remove on every global iteration.
         let target_count = difficulty_conditions.number ?? difficulty_conditions.max
         let attempts = 1
-        let max_attempts = 500
+        let max_attempts = 1000
         let possibilities_grid = Puzzle.generateEmptyPossibilitiesGrid()
         
         // First we generate a shuffled array of coordinates to randomly pick wich one to take a number from.
@@ -167,7 +167,7 @@ class Puzzle {
      */
     static createPuzzle(sudoku_grid, difficulty) {
         let attempts = 1
-        const max_attempts = 10
+        const max_attempts = 15
         const auxInstance = new Puzzle()
 
         while (attempts <= max_attempts) {

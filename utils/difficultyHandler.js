@@ -56,13 +56,13 @@ class DifficultyHandler {
                 conditions.ultLogic = 2
                 break
             case 4: 
-                conditions.min = 52
-                conditions.max = 58
+                conditions.min = 55
+                conditions.max = 60
                 conditions.ultLogic = 4
                 break
             case 5:
-                conditions.min = 54
-                conditions.max = 58
+                conditions.min = 60
+                conditions.max = 65
                 conditions.ultLogic = 5
                 break
         }
@@ -208,7 +208,6 @@ class DifficultyHandler {
             const startC = (b % 3) * 3
 
             let possibleCells = []
-            // Find where 'num' can go in this quadrant
             for (let i = 0; i < 3; i++) {
                 for (let j = 0; j < 3; j++) {
                     let r = startR + i
@@ -256,6 +255,57 @@ class DifficultyHandler {
     }
 
     /**
+     * This functions looks for groups of 2 or 3 cells within a box and row or column that all contain the same single candidate. If so, that candidate can be removed from the rest of that row or column outside the box.
+     * @param {*} grid 
+     * @param {*} possibilities_grid 
+     * @returns 
+     */
+    #findPointingSingles(grid, possibilities_grid) {
+        for (let q = 0; q < 9; q ++) {
+            const startR = Math.floor(q / 3) * 3
+            const startC = (q % 3) * 3
+
+            for (let num = 1; num <= 9; num ++) {
+                let possibleCells = []
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        let r = startR + i
+                        let c = startC + j
+                        if (grid[r][c] === 0) {
+                            const values = this.#getPossibleValues(r, c, possibilities_grid)
+                            if (values.includes(num)) possibleCells.push({ row: r, col: c, values:[num] })
+                        }
+                    }
+                }
+    
+                if (possibleCells.length >= 2 && possibleCells.length <= 3) {
+                    const values = Array.from(new Set(possibleCells.map(cell => cell.values).flat()))
+                    if (values.length > 1) continue
+                    const location = []
+                    const sameRow = possibleCells.every(cell => cell.row === possibleCells[0].row)
+                    const sameCol = possibleCells.every(cell => cell.col === possibleCells[0].col)
+                    if (sameRow) location.push('row')
+                    if (sameCol) location.push('col')
+    
+                    if (location.length > 0) {
+                        const constraint = {
+                            p1: possibleCells[0],
+                            p2: possibleCells[1],
+                            p3: possibleCells[2] ?? null,
+                            values,
+                            location
+                        }
+                        // console.log('---> Found pointing single:', constraint)
+                        if (Utils.isConstraintUseful(possibilities_grid, constraint)) {
+                            return constraint
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Simulates a human solver to rate the difficulty of a given puzzle.
      * @param {*} mainGrid The puzzle to be tested.
      * @param {number} removed_numbers The ammount of numbers removed to this point.
@@ -274,21 +324,43 @@ class DifficultyHandler {
         let naked_singles = 0
         let hidden_singles = 0
         let naked_pairs = 0
-        let pointing_groups = 0
+        let triple = 0
+        let single = 0
 
         // Iteration logic to keep trying to solve the puzzle until no strategies are left to apply. It runs out only when the strategies are over, not when the puzzle is solved. That's how we double check if it is solvable. If this returns undefined then the puzzle is not solvable after all.
-        let progress = true
-        while (true) {
-            //4. (remover) If still stuck we look for pointing pairs/triples.
-            const pointer = handler.#findPointingTriple(grid, possibilities_grid)
-            if (pointer) {
-                const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, pointer)
-                if (updated_possibilities.ammount_removed === 0) break
-                pointing_groups ++
-                console.warn(`---> Useful pointer found (${solvedCount} numbers solved to this point): `, pointer, 'possibilities removed: ', updated_possibilities.ammount_removed)
+        while (true) { 
+            // 1. (placer) Prioritize Naked Singles.
+            const naked_single = handler.#findNakedSingles(grid, possibilities_grid)
+            if (naked_single) {
+                // if (naked_pairs) console.log('Found naked single:', single)
+                const {row, col, value} = naked_single
+                const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
+                if (updated_possibilities.changes.length === 0) continue
+
+                grid[row][col] = value
+                solvedCount ++
+                naked_singles ++
                 possibilities_grid = updated_possibilities.possibilities_grid
-                solvingStrategy = Math.max(solvingStrategy, 3)
-                continue
+                if (!solvingStrategy) solvingStrategy = 0
+                continue // Found something, iterate again to try with updated data.
+            }  
+
+            // 2. (placer) If step 1 found nothing then we look for Hidden Singles.
+            const hidden = handler.#findHiddenSingles(grid, possibilities_grid)
+            if (hidden) {
+                const {row, col, value} = hidden
+                if (grid[row][col] === 0) {
+                    const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
+                    // if (naked_pairs) console.log('Found hidden single:', hidden, JSON.stringify(updated_possibilities.possibilities_grid), JSON.stringify(grid), ' possibilities removed: ', updated_possibilities.changes.length)
+                    if (updated_possibilities.changes.length === 0) continue
+
+                    grid[row][col] = value
+                    solvedCount ++
+                    hidden_singles ++
+                    possibilities_grid = updated_possibilities.possibilities_grid
+                    solvingStrategy = Math.max(solvingStrategy, 1)
+                    continue // Call another iteration with now updated data.
+                }
             }
 
             // 3. (remover) If stuck we now look for naked pairs. 
@@ -313,42 +385,31 @@ class DifficultyHandler {
                 continue
             }
 
-            // 2. (placer) If step 1 found nothing then we look for Hidden Singles.
-            const hidden = handler.#findHiddenSingles(grid, possibilities_grid)
-            if (hidden) {
-                const {row, col, value} = hidden
-                if (grid[row][col] === 0) {
-                    const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
-                    // if (naked_pairs) console.log('Found hidden single:', hidden, JSON.stringify(updated_possibilities.possibilities_grid), JSON.stringify(grid), ' possibilities removed: ', updated_possibilities.changes.length)
-                    if (updated_possibilities.changes.length === 0) continue
-
-                    grid[row][col] = value
-                    solvedCount ++
-                    hidden_singles ++
-                    possibilities_grid = updated_possibilities.possibilities_grid
-                    solvingStrategy = Math.max(solvingStrategy, 1)
-                    continue // Call another iteration with now updated data.
-                }
-            }
-
-            // 1. (placer) Prioritize Naked Singles.
-            const single = handler.#findNakedSingles(grid, possibilities_grid)
-            if (single) {
-                // if (naked_pairs) console.log('Found naked single:', single)
-                const {row, col, value} = single
-                const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
-                if (updated_possibilities.changes.length === 0) continue
-
-                grid[row][col] = value
-                solvedCount ++
-                naked_singles ++
+            //5. (remover) Now we look for pointing singles.
+            const pointing_single = handler.#findPointingSingles(grid, possibilities_grid)
+            if (pointing_single) {
+                const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, pointing_single)
+                if (updated_possibilities.ammount_removed === 0) break
+                single ++
+                // console.warn(`---> Useful pointing single found (${solvedCount} numbers solved to this point): `, pointing_single, 'possibilities removed: ', updated_possibilities.ammount_removed)
                 possibilities_grid = updated_possibilities.possibilities_grid
-                if (!solvingStrategy) solvingStrategy = 0
-                continue // Found something, iterate again to try with updated data.
+                solvingStrategy = Math.max(solvingStrategy, 3)
+                continue
+            }
+            
+            //4. (remover) If still stuck we look for pointing pairs/triples.
+            const pointing_triple = handler.#findPointingTriple(grid, possibilities_grid)
+            if (pointing_triple) {
+                const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, pointing_triple)
+                if (updated_possibilities.ammount_removed === 0) break
+                triple ++
+                // console.warn(`---> Useful pointing triple found (${solvedCount} numbers solved to this point): `, pointing_triple, 'possibilities removed: ', updated_possibilities.ammount_removed)
+                possibilities_grid = updated_possibilities.possibilities_grid
+                solvingStrategy = Math.max(solvingStrategy, 4)
+                continue
             }
 
             // If we reach here, we are stuck (No Singles left)
-            progress = false
             // console.log(solvedCount, totalEmpty, JSON.stringify(possibilities_grid))
             break
         }
@@ -360,15 +421,15 @@ class DifficultyHandler {
             // if (naked_pairs) console.log(`grid status(${solvedCount} / ${totalEmpty}): `, JSON.stringify(grid), JSON.stringify(possibilities_grid))
 
             if (removed_numbers === difficulty_conditions.number) difficulty = 0 //novice
-            if ((removed_numbers === difficulty_conditions.number && difficulty_conditions.number > 25 && difficulty_conditions.number <= 35) && (solvingStrategy >= 1)) difficulty = 1 //easy
-            if (removed_numbers === difficulty_conditions.number && difficulty_conditions.number > 35 && difficulty_conditions.number <= 45 && (solvingStrategy >= 2)) difficulty = 2 //normal
+            if ((removed_numbers === difficulty_conditions.number && difficulty_conditions.number > 25 && difficulty_conditions.number <= 35) && (solvingStrategy >= 0)) difficulty = 1 //easy
+            if (removed_numbers === difficulty_conditions.number && difficulty_conditions.number > 35 && difficulty_conditions.number <= 45 && (solvingStrategy >= 1)) difficulty = 2 //normal
             if (removed_numbers === difficulty_conditions.number && difficulty_conditions.number > 45 && (solvingStrategy >= 3)) difficulty = 3 //hard
         } else {
             // if (naked_pairs) console.log(`---> Grid status(${solvedCount} / ${totalEmpty}): `, JSON.stringify(grid), JSON.stringify(possibilities_grid))
         }
 
-        // if (naked_pairs) console.log('---> Difficulty determined:', difficulty, solvingStrategy, "removed numbers: ", removed_numbers, "solved numbers: ", solvedCount, "total empty: ", totalEmpty, ` Naked singles: ${naked_singles}, Hidden singles: ${hidden_singles}, Naked pairs: ${naked_pairs}, Pointing groups: ${pointing_groups}`)
-        return {difficulty, solvingStrategy, strategies_used: {naked_singles, hidden_singles, naked_pairs, pointing_groups}}
+        // if (naked_pairs) console.log('---> Difficulty determined:', difficulty, solvingStrategy, "removed numbers: ", removed_numbers, "solved numbers: ", solvedCount, "total empty: ", totalEmpty, ` Naked singles: ${naked_singles}, Hidden singles: ${hidden_singles}, Naked pairs: ${naked_pairs}, Pointing groups: ${pointing_triple}`)
+        return {difficulty, solvingStrategy, strategies_used: {naked_singles, hidden_singles, naked_pairs, triple, single}}
     }
 }
 
