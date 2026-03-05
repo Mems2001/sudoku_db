@@ -7,6 +7,21 @@ class Puzzle {
         return grid
     }
 
+    static generateEmptyAnnotationsGrid() {
+        const annotations = []
+        for (let i = 0; i < 9; i++) {
+            let row = []
+            for (let j = 0; j < 9; j++) {
+                let col = Array(9).fill(0)
+                row.push(col)
+            }
+            annotations.push(row)
+        }
+
+        if (annotations.length <= 0) return
+        return annotations
+    }
+
     /**
      * A recursive function that counts the number of solutions for a given sudoku grid. We use this to filter solvable puzzles (the ones with a single solution).
      * @param {*} grid

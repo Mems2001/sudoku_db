@@ -2,6 +2,7 @@ const { Op } = require('sequelize')
 const models = require('../../models')
 const uuid = require('uuid')
 const profilesServices = require('./profiles.services')
+const PuzzleGenerator = require('../../utils/createSudokuPuzzle')
 
 /**
  * In order to create a new player we get game and profile information to update the game stats at the user profile.
@@ -24,23 +25,13 @@ async function createPlayerByUserId (user_id, game_id, {is_connected}) {
         ]
         })
 
-        const annotations = []
-        for (let i = 0; i < 9; i++) {
-            let row = []
-            for (let j = 0; j < 9; j++) {
-                let col = Array(9).fill(0)
-                row.push(col)
-            }
-            annotations.push(row)
-        }
-
         const player = await models.Players.create({
             id: uuid.v4(),
             user_id,
             game_id,
             grid: game.Puzzle.grid,
             number: game.Puzzle.number,
-            annotations,
+            annotations: PuzzleGenerator.generateEmptyAnnotationsGrid(),
             isConnected: is_connected
         } , {transaction})
 

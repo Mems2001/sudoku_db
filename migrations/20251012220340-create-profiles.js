@@ -48,7 +48,7 @@ module.exports = {
           field: "highlight_color"
         },
         inputMode: {
-          type: Sequelize.INTEGER, // 0 -> Buttons, 1 -> Keyboard
+          type: Sequelize.INTEGER, // 0 -> Buttons, 1 -> Keyboard, 2 -> Wheel
           allowNull: false,
           defaultValue: 0,
           field: 'input_mode'
