@@ -6,6 +6,7 @@ const { authenticateSession } = require('../middlewares/session.middleware')
 router.route('/single/:game_id')
     .get(authenticateSession , PlayersController.getPlayerByGameId)
     .patch(authenticateSession , PlayersController.patchPlayerByGameId)
+    .post(authenticateSession, PlayersController.retryPlayerByGameId)
 
 router.route('/multi/:game_id')
     .get(PlayersController.getConnectedPlayersByGameId)

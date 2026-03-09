@@ -2,6 +2,7 @@ const { Op } = require('sequelize')
 const models = require('../../models')
 const uuid = require('uuid')
 const profilesServices = require('./profiles.services')
+const gamesServices = require('./games.services')
 const PuzzleGenerator = require('../../utils/createSudokuPuzzle')
 
 /**
@@ -235,6 +236,42 @@ async function updatePlayerByGameId (game_id , user_id , {grid, number, annotati
     }
 }
 
+async function retryPlayerbyGameId (game_id, user_id) {
+    const transaction = await models.sequelize.transaction()
+    try {
+        let player = await findPlayerByGameIdUserId(game_id, user_id)
+        let game = await gamesServices.findGameById(game_id)
+        let profile = await profilesServices.findProfileByUserId(user_id)
+
+        if (player && game) {
+            await game.update({status:0, time:0}, {transaction})
+            await player.update({grid:game.Puzzle.grid, nummber:game.Puzzle.number, annotations: PuzzleGenerator.generateEmptyAnnotationsGrid(), errors: 0, status: 0}, {transaction})
+
+            const game_type_name = profilesServices.handleGameStatByGameType(game.type)
+            const games_restarted_name = profilesServices.handleGameStatByDifficulty(game.Puzzle.difficulty, 'reset')
+
+            const game_stats = profile.game_stats
+            const game_type_stats = game_stats[game_type_name]
+            let new_game_type_stats = {
+                ...game_type_stats,
+                [games_restarted_name]: game_type_stats[games_restarted_name] ? game_type_stats[games_restarted_name] + 1 : 1
+            }
+            let new_game_stats = {
+                ...game_stats,
+                [game_type_name]: new_game_type_stats
+            }
+            await profile.update({game_stats: new_game_stats}, {transaction})
+        }
+        
+        await transaction.commit()
+        return player
+    } catch (error) {
+        await transaction.rollback()
+        console.log(error)
+        throw error
+    }
+}
+
 async function updatePlayerHostById(player_id) {
     const transaction = await models.sequelize.transaction()
 
@@ -311,6 +348,7 @@ module.exports = {
     playerConnectById,
     findPlayerByUserId,
     findPlayersByGameId,
+    retryPlayerbyGameId,
     playerDisconnectById,
     updatePlayerHostById,
     updatePlayerByGameId,

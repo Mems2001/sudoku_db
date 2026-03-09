@@ -100,7 +100,7 @@ async function  findGameById (game_id) {
             {
                 model: models.Puzzles,
                 as: 'Puzzle',
-                attributes: ['id' , 'number' , 'grid'],
+                attributes: ['id' , 'number' , 'grid', 'difficulty'],
                 include: [
                     {
                         model: models.Sudokus,

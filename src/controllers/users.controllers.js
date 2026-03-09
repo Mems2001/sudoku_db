@@ -44,7 +44,7 @@ function getAnon(req , res) {
             res.setCookie('sudoku21-access-token' , data.accesToken)
             req.session.user = data.user
             res.status(201).json({
-                message: "Anon user logged in",
+                message: "Playing as an anonymous user",
                 user_id: data.user.id,
                 role: "anon"
             })

@@ -76,10 +76,21 @@ function patchPlayerByGameId (req, res) {
         })
 }
 
+function retryPlayerByGameId (req, res) {
+    PlayersService.retryPlayerbyGameId(req.params.game_id , req.session.user.user_id)
+        .then(data => {
+            res.status(200).json(data)
+        })
+        .catch(err => {
+            res.status(400).json({error: err.message})
+        })
+}
+
 module.exports = {
     postPlayerByUserId,
     getPlayerByGameId,
     getPlayersByGameId,
+    retryPlayerByGameId,
     getConnectedPlayersByGameId,
     getPlayerIsOnList,
     patchPlayerByGameId

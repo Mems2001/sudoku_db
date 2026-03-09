@@ -103,5 +103,5 @@ db.sync()
     .then(() => console.log("Database correctly sincronized"))
     .catch((err) => console.log(err))
 
-server.listen(port, () => {
+server.listen(port,'0.0.0.0' , () => {
         console.log(`Server on PORT: ${port}`)})

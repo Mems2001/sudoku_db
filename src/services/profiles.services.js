@@ -188,13 +188,13 @@ async function updateProfileLose(user_id, game_type, puzzle_difficulty, r_transa
             }
         })
         const game_type_name = handleGameStatByGameType(game_type)
-        const puzzles_won_by_difficulty = handleGameStatByDifficulty(puzzle_difficulty, 'lost')
+        const puzzles_lost_by_difficulty = handleGameStatByDifficulty(puzzle_difficulty, 'lost')
 
         const game_stats = profile.game_stats
         const game_type_stats = game_stats[game_type_name]
         let new_game_type_stats = {
             ...game_type_stats,
-            [puzzles_won_by_difficulty]: game_type_stats[puzzles_won_by_difficulty] ? game_type_stats[puzzles_won_by_difficulty] + 1 : 1
+            [puzzles_lost_by_difficulty]: game_type_stats[puzzles_lost_by_difficulty] ? game_type_stats[puzzles_lost_by_difficulty] + 1 : 1
         }
 
         let new_game_stats = {
