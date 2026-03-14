@@ -35,9 +35,10 @@ const sserver = https.createServer(credentials, app)
 
 // Cors settings
 app.use(cors({
-  origin: ['http://localhost:5173' , 'https://sudoku21.netlify.app', 'http://192.168.1.25:5173'],
+  origin: ['http://localhost:5173' , 'https://sudoku21.netlify.app', 'http://192.168.1.4:5173'],
+  // origin: '*',
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-  credentials: true
+  credentials: true, 
 }))
 
 //Cookies settings

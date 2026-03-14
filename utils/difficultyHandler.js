@@ -32,32 +32,28 @@ class DifficultyHandler {
 
         switch (difficulty) {
             case 0:
-                conditions.min = 15
+                conditions.min = 14
                 conditions.max = 25
-                conditions.number = Utils.throwRandomNumber(15, 25)
                 conditions.ultLogic = 0
                 break
             case 1:
                 conditions.min = 25
                 conditions.max = 35
-                conditions.number = Utils.throwRandomNumber(25, 35)
                 conditions.ultLogic = 1
                 break
             case 2:
                 conditions.min = 35
                 conditions.max = 45
-                conditions.number = Utils.throwRandomNumber(35, 45)
                 conditions.ultLogic = 1
                 break
             case 3:
                 conditions.min = 45
                 conditions.max = 55
-                conditions.number = Utils.throwRandomNumber(45, 55)
                 conditions.ultLogic = 2
                 break
             case 4: 
                 conditions.min = 55
-                conditions.max = 60
+                conditions.max = 65
                 conditions.ultLogic = 4
                 break
             case 5:
@@ -306,6 +302,120 @@ class DifficultyHandler {
     }
 
     /**
+     * This logic will look for two cells with the same two values located at the same row, column, or quadrant. If so, it will reveal them as naked pairs. This is, we will clean other possible values of that cells untill only two values are left. Then we can find the pair as naked by #findNakedPairs.
+     * @param {*} grid 
+     * @param {*} possibilities_grid 
+     */
+    #findHiddenPairs(grid, possibilities_grid) {
+        //By rows
+        for (let r = 0; r < 9; r ++) {
+            const counter = {}
+            for (let n = 1; n < 10; n++) {
+                for (let j = r + 1; j < 9; j ++) {
+                    if (Array.isArray(possibilities_grid[r][j]) && this.#getPossibleValues(r, j, possibilities_grid).includes(n)) {
+                        if (!counter[n]) 
+                                counter[n] = {
+                                count: 1,
+                                positions: [{row: r, col: j}]
+                            }
+                        else {
+                            counter[n].count ++,
+                            counter[n].positions.push({row: r, col: j})
+                        }
+                    }
+                }
+                
+            }
+
+            const keys = Object.keys(counter)
+            if (keys.length > 1) {
+                for (let i = 0; i < keys.length; i ++) {
+                    for (let j = i + 1; j < keys.length; j ++) {
+                        if (counter[keys[i]].count === counter[keys[j]].count && counter[keys[i]].count === 2) {
+                            const positions1 = counter[keys[i]].positions
+                            const positions2 = counter[keys[j]].positions
+                            // console.log(counter)
+                            // console.error('hi', positions1, positions2)
+                            if (positions1[0].col === positions2[0].col && positions1[1].col === positions2[1].col) {
+                                if (this.#getPossibleValues(positions1[0].row, positions1[0].col, possibilities_grid).length > 2 || this.#getPossibleValues(positions2[1].row, positions2[1].col, possibilities_grid).length > 2) return {
+                                    p1: {row: positions1[0].row, col: positions1[0].col},
+                                    p2: {row: positions2[1].row, col: positions2[1].col},
+                                    values: [parseInt(keys[i]), parseInt(keys[j])]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // Now we determine if within the possible_pairs array is there two with the same two values and at the same location unit(row, column, quadrant)
+        
+    }
+
+    /**
+     * This functions looks for a pair of rows or columns with a possible value repeated into two cells equally located inside both rows or columns. If found, then the value can be removed from the alternate coordinate of the row or column it belongs. This is, if i find a pair of cells with the same value and location at two different columns, then, the value can be removed from the rows, not the columns.
+     * @param {*} grid 
+     * @param {*} possibilities_grid 
+     * @returns 
+     */
+    #findXWingPairs(grid, possibilities_grid) {
+        for (let num = 1; num <= 9; num++) {
+            const selectedRows = []
+            for (let r = 0; r < 9; r++) {
+                const selectedPoints = []
+                for (let c =0; c < 9; c++) {
+                    if (grid[r][c] === 0 && this.#getPossibleValues(r, c, possibilities_grid).includes(num)) selectedPoints.push({row: r, col: c, values: [num]})
+                }
+                if (selectedPoints.length === 2) selectedRows.push(selectedPoints)
+            }
+            if (selectedRows.length >= 2) {
+                for (let i = 0; i < selectedRows.length; i++) {
+                    for (let j = selectedRows.length - 1; j >= 0; j--) {
+                        if (i === j) continue
+                        let matches = 0
+                        for (const point of selectedRows[i]) {
+                            for (const point2 of selectedRows[j]) {
+                                if (point.col === point2.col) matches ++ 
+                            }
+                        }
+                        if (matches === 2) {    
+                            // console.log('---> Selected rows for X-wing: ', selectedRows)
+                            return {p1: selectedRows[i][0], p2: selectedRows[j][1], values: selectedRows[i][0].values, location: ['x-col']} 
+                        }         
+                    }
+                }
+            }
+
+            const selectedCols = []
+            for (let c = 0; c < 9; c++) {
+                const selectedPoints = []
+                for (let r =0; r < 9; r++) {
+                    if (grid[r][c] === 0 && this.#getPossibleValues(r, c, possibilities_grid).includes(num)) selectedPoints.push({row: r, col: c, values: [num]})
+                }
+                if (selectedPoints.length === 2) selectedCols.push(selectedPoints)
+            }
+            if (selectedCols.length >= 2) {
+                for (let i = 0; i < selectedCols.length; i++) {
+                    for (let j = selectedCols.length - 1; j >= 0; j--) {
+                        if (i === j) continue
+                        let matches = 0
+                        for (const point of selectedCols[i]) {
+                            for (const point2 of selectedCols[j]) {
+                                if (point.row === point2.row) matches ++ 
+                            }
+                        }
+                        if (matches === 2) {    
+                            return {p1: selectedCols[i][0], p2: selectedCols[j][1], values: selectedCols[i][0].values, location: ['x-row']} 
+                        }         
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Simulates a human solver to rate the difficulty of a given puzzle.
      * @param {*} mainGrid The puzzle to be tested.
      * @param {number} removed_numbers The ammount of numbers removed to this point.
@@ -324,11 +434,31 @@ class DifficultyHandler {
         let naked_singles = 0
         let hidden_singles = 0
         let naked_pairs = 0
-        let triple = 0
-        let single = 0
-
+        let pointing_triples = 0
+        let pointing_singles = 0
+        let hidden_pairs = 0
+        let x_wing_pairs = 0
+        
         // Iteration logic to keep trying to solve the puzzle until no strategies are left to apply. It runs out only when the strategies are over, not when the puzzle is solved. That's how we double check if it is solvable. If this returns undefined then the puzzle is not solvable after all.
         while (true) { 
+            // 2. (placer) If step 1 found nothing then we look for Hidden Singles.
+            const hidden = handler.#findHiddenSingles(grid, possibilities_grid)
+            if (hidden) {
+                const {row, col, value} = hidden
+                if (grid[row][col] === 0) {
+                    const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
+                    // console.log('Found hidden single:', hidden, JSON.stringify(updated_possibilities.possibilities_grid), JSON.stringify(grid), ' possibilities removed: ', updated_possibilities.changes.length)
+                    if (updated_possibilities.changes.length === 0) continue
+
+                    grid[row][col] = value
+                    solvedCount ++
+                    hidden_singles ++
+                    possibilities_grid = updated_possibilities.possibilities_grid
+                    solvingStrategy = Math.max(solvingStrategy, 1)
+                    continue // Call another iteration with now updated data.
+                }
+            }
+
             // 1. (placer) Prioritize Naked Singles.
             const naked_single = handler.#findNakedSingles(grid, possibilities_grid)
             if (naked_single) {
@@ -344,24 +474,6 @@ class DifficultyHandler {
                 if (!solvingStrategy) solvingStrategy = 0
                 continue // Found something, iterate again to try with updated data.
             }  
-
-            // 2. (placer) If step 1 found nothing then we look for Hidden Singles.
-            const hidden = handler.#findHiddenSingles(grid, possibilities_grid)
-            if (hidden) {
-                const {row, col, value} = hidden
-                if (grid[row][col] === 0) {
-                    const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
-                    // if (naked_pairs) console.log('Found hidden single:', hidden, JSON.stringify(updated_possibilities.possibilities_grid), JSON.stringify(grid), ' possibilities removed: ', updated_possibilities.changes.length)
-                    if (updated_possibilities.changes.length === 0) continue
-
-                    grid[row][col] = value
-                    solvedCount ++
-                    hidden_singles ++
-                    possibilities_grid = updated_possibilities.possibilities_grid
-                    solvingStrategy = Math.max(solvingStrategy, 1)
-                    continue // Call another iteration with now updated data.
-                }
-            }
 
             // 3. (remover) If stuck we now look for naked pairs. 
             const pair = handler.#findNakedPair(grid, possibilities_grid)
@@ -390,7 +502,7 @@ class DifficultyHandler {
             if (pointing_single) {
                 const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, pointing_single)
                 if (updated_possibilities.ammount_removed === 0) break
-                single ++
+                pointing_singles ++
                 // console.warn(`---> Useful pointing single found (${solvedCount} numbers solved to this point): `, pointing_single, 'possibilities removed: ', updated_possibilities.ammount_removed)
                 possibilities_grid = updated_possibilities.possibilities_grid
                 solvingStrategy = Math.max(solvingStrategy, 3)
@@ -402,12 +514,35 @@ class DifficultyHandler {
             if (pointing_triple) {
                 const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, pointing_triple)
                 if (updated_possibilities.ammount_removed === 0) break
-                triple ++
+                pointing_triples ++
                 // console.warn(`---> Useful pointing triple found (${solvedCount} numbers solved to this point): `, pointing_triple, 'possibilities removed: ', updated_possibilities.ammount_removed)
                 possibilities_grid = updated_possibilities.possibilities_grid
                 solvingStrategy = Math.max(solvingStrategy, 4)
                 continue
             }
+
+            //6. (remover)
+            const hidden_pair = handler.#findHiddenPairs(grid, possibilities_grid)
+            if (hidden_pair) {
+                console.warn(hidden_pair)
+                hidden_pairs ++
+                possibilities_grid = Utils.cleanHiddenPair(possibilities_grid, hidden_pair)
+                solvingStrategy = Math.max(solvingStrategy, 6)
+                continue
+            }
+
+            //7. (remover) If still stuck we look for X-wing pairs.
+            const x_wing_pair = handler.#findXWingPairs(grid, possibilities_grid)
+            if (x_wing_pair) {
+                const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, x_wing_pair)
+                if (updated_possibilities.ammount_removed === 0) break
+                x_wing_pairs ++
+                console.warn(`---> Useful X-wing pair found (${solvedCount} numbers solved to this point): `, x_wing_pair, 'possibilities removed: ', updated_possibilities.ammount_removed)
+                possibilities_grid = updated_possibilities.possibilities_grid
+                solvingStrategy = Math.max(solvingStrategy, 6)
+                continue
+            }
+
 
             // If we reach here, we are stuck (No Singles left)
             // console.log(solvedCount, totalEmpty, JSON.stringify(possibilities_grid))
@@ -420,16 +555,18 @@ class DifficultyHandler {
             // if (naked_pairs) console.log('---> Fully solved')
             // if (naked_pairs) console.log(`grid status(${solvedCount} / ${totalEmpty}): `, JSON.stringify(grid), JSON.stringify(possibilities_grid))
 
-            if (removed_numbers === difficulty_conditions.number) difficulty = 0 //novice
-            if ((removed_numbers === difficulty_conditions.number && difficulty_conditions.number > 25 && difficulty_conditions.number <= 35) && (solvingStrategy >= 0)) difficulty = 1 //easy
-            if (removed_numbers === difficulty_conditions.number && difficulty_conditions.number > 35 && difficulty_conditions.number <= 45 && (solvingStrategy >= 1)) difficulty = 2 //normal
-            if (removed_numbers === difficulty_conditions.number && difficulty_conditions.number > 45 && (solvingStrategy >= 3)) difficulty = 3 //hard
+            if (solvingStrategy >= 1) difficulty = 2 //normal
+            if (solvingStrategy >= 3) difficulty = 3 //hard
+            if (solvingStrategy >= 5) difficulty = 4 //Expert
+
+            if (totalEmpty > 14 && totalEmpty <= 25) difficulty = 0 //novice
+            if (totalEmpty > 25 && totalEmpty <= 35) difficulty = 1 //easy
         } else {
             // if (naked_pairs) console.log(`---> Grid status(${solvedCount} / ${totalEmpty}): `, JSON.stringify(grid), JSON.stringify(possibilities_grid))
         }
 
         // if (naked_pairs) console.log('---> Difficulty determined:', difficulty, solvingStrategy, "removed numbers: ", removed_numbers, "solved numbers: ", solvedCount, "total empty: ", totalEmpty, ` Naked singles: ${naked_singles}, Hidden singles: ${hidden_singles}, Naked pairs: ${naked_pairs}, Pointing groups: ${pointing_triple}`)
-        return {difficulty, solvingStrategy, strategies_used: {naked_singles, hidden_singles, naked_pairs, triple, single}}
+        return {difficulty, solvingStrategy, strategies_used: {naked_singles, hidden_singles, naked_pairs, pointing_singles, pointing_triples, hidden_pairs, x_wing_pairs}}
     }
 }
 

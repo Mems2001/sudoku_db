@@ -95,7 +95,7 @@ class Puzzle {
         console.log('Trying to create a puzzle with difficutly: ', difficulty)
         const auxInstance = new Puzzle()
         const difficulty_conditions = DifficultyHandler.conditionsByDifficulty(difficulty) // Having this here allows us to reset the target of numbers to remove on every global iteration.
-        let target_count = difficulty_conditions.number ?? difficulty_conditions.max
+        // let target_count = difficulty_conditions.number ?? difficulty_conditions.max
         let attempts = 1
         let max_attempts = 1000
         let possibilities_grid = Puzzle.generateEmptyPossibilitiesGrid()
@@ -126,7 +126,7 @@ class Puzzle {
             if (attempts >= max_attempts) return "limit_reached"
 
             //2. We check if the ammount removed fits the target (to then evaluate if the puzzle met the requierements).
-            if (ammount_removed === target_count) {
+            if (ammount_removed > difficulty_conditions.min && ammount_removed <= difficulty_conditions.max) {
                 //If so, we check if it meets the required difficulty. If it does we return the grid as a successfull puzzle, if not, we return null to trigger the backtrack.
                 const auxDiff = DifficultyHandler.getPuzzleDifficulty(current_grid, ammount_removed, difficulty_conditions, possibilities_grid)
                 // console.log('---> Difficulty obtained: ', auxDiff.difficulty, ammount_removed, ' and strategies used: ', auxDiff.strategies_used)

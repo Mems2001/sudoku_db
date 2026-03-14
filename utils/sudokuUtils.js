@@ -1,3 +1,5 @@
+const { col } = require("sequelize");
+
 class SudokuUtils {
     static throwRandomNumber(min, max) {
         const pseudoRandom = Math.floor(Math.random() * (max - min))
@@ -224,10 +226,6 @@ class SudokuUtils {
 
     // Specific logic for puzzle creation
 
-    static updatePossibilitiesForPuzzleCreation(removed_number, position, possibilities_grid) {
-
-    }
-
     static removeConstraintsFromPossibilities(possibilities_grid, constraint) {
         // console.log('---> Possibilities: ', JSON.stringify(possibilities_grid))
         let ammount_removed = 0
@@ -288,12 +286,54 @@ class SudokuUtils {
                         }
                     }
                     break
+                case 'x-col':
+                    for (let r = 0; r < 9; r++) {
+                        if (!Array.isArray(possibilities_grid[r][col]) || !Array.isArray(possibilities_grid[r][col2])) continue
+                        const index1 = possibilities_grid[r][col].indexOf(constraint.values[0])
+                        if (index1 >= 0 && (r !== row && r !== row2)) {possibilities_grid[r][col].splice(index1, 1); ammount_removed++}
+                        const index2 = possibilities_grid[r][col2].indexOf(constraint.values[0])
+                        if (index2 >= 0 && (r !== row && r !== row2)) {possibilities_grid[r][col2].splice(index2, 1); ammount_removed++}
+                    }
+                    break
+                case 'x-row':
+                    for (let c = 0; c < 9; c++) {
+                        if (!Array.isArray(possibilities_grid[row][c]) || !Array.isArray(possibilities_grid[row2][c])) continue
+                        const index1 = possibilities_grid[row][c].indexOf(constraint.values[0])
+                        if (index1 >= 0 && (c !== col && c !== col2)) {possibilities_grid[row][c].splice(index1, 1); ammount_removed++}
+                        const index2 = possibilities_grid[row2][c].indexOf(constraint.values[0])
+                        if (index2 >= 0 && (c !== col && c !== col2)) {possibilities_grid[row2][c].splice(index2, 1); ammount_removed++}
+                    }
+                    break
             }
         }
 
         // console.log('---> Updated possibilities: ', JSON.stringify(possibilities_grid))
         // console.log('---> Ammount removed from possibilities grid: ', ammount_removed)
         return {possibilities_grid, ammount_removed}
+    }
+
+    static cleanHiddenPair(possibilities_grid, constraint) {
+        const [row1, col1] = [constraint.p1.row, constraint.p1.col]
+        const [row2, col2] = [constraint.p2.row, constraint.p2.col]
+        const possibilities_1 = possibilities_grid[row1][col1]
+        const possibilities_2 = possibilities_grid[row2][col2]
+
+        for (const value of possibilities_1) {
+            if (value !== constraint.values[0] && value !== constraint.values[1]) {
+                const index = possibilities_1.indexOf(value)
+                // console.log(possibilities_grid[row1][col1])
+                possibilities_grid[row1][col1].splice(index, 1)
+            }
+        }
+        for (const value of possibilities_2) {
+            if (value !== constraint.values[0] && value !== constraint.values[1]) {
+                const index = possibilities_1.indexOf(value)
+                // console.log(possibilities_grid[row2][col2])
+                possibilities_grid[row2][col2].splice(index, 1)
+            }
+        }
+
+        return possibilities_grid
     }
 }
 
