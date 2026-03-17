@@ -303,15 +303,15 @@ class DifficultyHandler {
 
     /**
      * This logic will look for two cells with the same two values located at the same row, column, or quadrant. If so, it will reveal them as naked pairs. This is, we will clean other possible values of that cells untill only two values are left. Then we can find the pair as naked by #findNakedPairs.
-     * @param {*} grid 
      * @param {*} possibilities_grid 
      */
-    #findHiddenPairs(grid, possibilities_grid) {
+    #findHiddenPairs(possibilities_grid) {
         //By rows
         for (let r = 0; r < 9; r ++) {
+            // We first produce a counter object wich will contain the number of apparitions of every value and an array of the positions it appears in.
             const counter = {}
             for (let n = 1; n < 10; n++) {
-                for (let j = r + 1; j < 9; j ++) {
+                for (let j = 0; j < 9; j ++) {
                     if (Array.isArray(possibilities_grid[r][j]) && this.#getPossibleValues(r, j, possibilities_grid).includes(n)) {
                         if (!counter[n]) 
                                 counter[n] = {
@@ -327,6 +327,7 @@ class DifficultyHandler {
                 
             }
 
+            // We now compare the values' appeareances until we found two of them with two appeareances. If so, we check if they share the same two positions and in that case we return the hidden pair.
             const keys = Object.keys(counter)
             if (keys.length > 1) {
                 for (let i = 0; i < keys.length; i ++) {
@@ -337,10 +338,13 @@ class DifficultyHandler {
                             // console.log(counter)
                             // console.error('hi', positions1, positions2)
                             if (positions1[0].col === positions2[0].col && positions1[1].col === positions2[1].col) {
-                                if (this.#getPossibleValues(positions1[0].row, positions1[0].col, possibilities_grid).length > 2 || this.#getPossibleValues(positions2[1].row, positions2[1].col, possibilities_grid).length > 2) return {
+                                if (this.#getPossibleValues(positions1[0].row, positions1[0].col, possibilities_grid).length > 2 || this.#getPossibleValues(positions2[1].row, positions2[1].col, possibilities_grid).length > 2) {
+                                    // console.log('row hidden pair')
+                                    return {
                                     p1: {row: positions1[0].row, col: positions1[0].col},
                                     p2: {row: positions2[1].row, col: positions2[1].col},
                                     values: [parseInt(keys[i]), parseInt(keys[j])]
+                                    }
                                 }
                             }
                         }
@@ -349,15 +353,103 @@ class DifficultyHandler {
             }
         }
 
+        // By columns
+        for (let c = 0; c < 9; c ++) {
+            const counter = {}
+            for (let n = 1; n < 10; n++) {
+                for (let i = 0; i < 9; i ++) {
+                    if (Array.isArray(possibilities_grid[i][c]) && this.#getPossibleValues(i, c, possibilities_grid).includes(n)) {
+                        if (!counter[n]) 
+                                counter[n] = {
+                                count: 1,
+                                positions: [{row: i, col: c}]
+                            }
+                        else {
+                            counter[n].count ++,
+                            counter[n].positions.push({row: i, col: c})
+                        }
+                    }
+                }
+                
+            }
 
-        // Now we determine if within the possible_pairs array is there two with the same two values and at the same location unit(row, column, quadrant)
+            const keys = Object.keys(counter)
+            if (keys.length > 1) {
+                for (let i = 0; i < keys.length; i ++) {
+                    for (let j = i + 1; j < keys.length; j ++) {
+                        if (counter[keys[i]].count === counter[keys[j]].count && counter[keys[i]].count === 2) {
+                            const positions1 = counter[keys[i]].positions
+                            const positions2 = counter[keys[j]].positions
+                            // console.log(counter)
+                            // console.error('hi', positions1, positions2)
+                            if (positions1[0].row === positions2[0].row && positions1[1].row === positions2[1].row) {
+                                if (this.#getPossibleValues(positions1[0].row, positions1[0].col, possibilities_grid).length > 2 || this.#getPossibleValues(positions2[1].row, positions2[1].col, possibilities_grid).length > 2) {
+                                    // console.log('column hidden pair')
+                                    return {
+                                    p1: {row: positions1[0].row, col: positions1[0].col},
+                                    p2: {row: positions2[1].row, col: positions2[1].col},
+                                    values: [parseInt(keys[i]), parseInt(keys[j])]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         
+        // By quadrants
+        for (let q = 0; q < 9; q ++) {
+            const counter = {}
+            for (let n = 1; n < 10; n++) {
+                for (let m = 0; m < 9; m ++) {
+                    const r = Math.floor(m/3) + (Math.floor(q/3) * 3)
+                    const c = ((q%3) * 3) + (m%3)
+                    if (Array.isArray(possibilities_grid[r][c]) && this.#getPossibleValues(r, c, possibilities_grid).includes(n)) {
+                        if (!counter[n]) 
+                                counter[n] = {
+                                count: 1,
+                                positions: [{row: r, col: c}]
+                            }
+                        else {
+                            counter[n].count ++,
+                            counter[n].positions.push({row: r, col: c})
+                        }
+                    }
+                }
+                
+            }
+
+            const keys = Object.keys(counter)
+            if (keys.length > 1) {
+                for (let i = 0; i < keys.length; i ++) {
+                    for (let j = i + 1; j < keys.length; j ++) {
+                        if (counter[keys[i]].count === counter[keys[j]].count && counter[keys[i]].count === 2) {
+                            const positions1 = counter[keys[i]].positions
+                            const positions2 = counter[keys[j]].positions
+                            // console.log(counter)
+                            // console.error('hi', positions1, positions2)
+                            if (positions1[0].row === positions2[0].row && positions1[1].row === positions2[1].row && positions1[0].col === positions2[0].col && positions1[1].col === positions2[1].col) {
+                                if (this.#getPossibleValues(positions1[0].row, positions1[0].col, possibilities_grid).length > 2 || this.#getPossibleValues(positions2[1].row, positions2[1].col, possibilities_grid).length > 2) {
+                                    // console.log('quadrant hidden pair')
+                                    return {
+                                    p1: {row: positions1[0].row, col: positions1[0].col},
+                                    p2: {row: positions2[1].row, col: positions2[1].col},
+                                    values: [parseInt(keys[i]), parseInt(keys[j])]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
      * This functions looks for a pair of rows or columns with a possible value repeated into two cells equally located inside both rows or columns. If found, then the value can be removed from the alternate coordinate of the row or column it belongs. This is, if i find a pair of cells with the same value and location at two different columns, then, the value can be removed from the rows, not the columns.
      * @param {*} grid 
-     * @param {*} possibilities_grid 
+     * @param {*} possibilities_grid
      * @returns 
      */
     #findXWingPairs(grid, possibilities_grid) {
@@ -372,8 +464,7 @@ class DifficultyHandler {
             }
             if (selectedRows.length >= 2) {
                 for (let i = 0; i < selectedRows.length; i++) {
-                    for (let j = selectedRows.length - 1; j >= 0; j--) {
-                        if (i === j) continue
+                    for (let j = i + 1; j < selectedRows.length; j++) {
                         let matches = 0
                         for (const point of selectedRows[i]) {
                             for (const point2 of selectedRows[j]) {
@@ -398,8 +489,7 @@ class DifficultyHandler {
             }
             if (selectedCols.length >= 2) {
                 for (let i = 0; i < selectedCols.length; i++) {
-                    for (let j = selectedCols.length - 1; j >= 0; j--) {
-                        if (i === j) continue
+                    for (let j = i + 1; j < selectedCols.length; j++) {
                         let matches = 0
                         for (const point of selectedCols[i]) {
                             for (const point2 of selectedCols[j]) {
@@ -471,7 +561,7 @@ class DifficultyHandler {
                 solvedCount ++
                 naked_singles ++
                 possibilities_grid = updated_possibilities.possibilities_grid
-                if (!solvingStrategy) solvingStrategy = 0
+                solvingStrategy = Math.max(solvingStrategy, 1)
                 continue // Found something, iterate again to try with updated data.
             }  
 
@@ -522,12 +612,12 @@ class DifficultyHandler {
             }
 
             //6. (remover)
-            const hidden_pair = handler.#findHiddenPairs(grid, possibilities_grid)
+            const hidden_pair = handler.#findHiddenPairs(possibilities_grid)
             if (hidden_pair) {
-                console.warn(hidden_pair)
+                // console.warn(hidden_pair)
                 hidden_pairs ++
                 possibilities_grid = Utils.cleanHiddenPair(possibilities_grid, hidden_pair)
-                solvingStrategy = Math.max(solvingStrategy, 6)
+                solvingStrategy = Math.max(solvingStrategy, 5)
                 continue
             }
 
@@ -537,7 +627,7 @@ class DifficultyHandler {
                 const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, x_wing_pair)
                 if (updated_possibilities.ammount_removed === 0) break
                 x_wing_pairs ++
-                console.warn(`---> Useful X-wing pair found (${solvedCount} numbers solved to this point): `, x_wing_pair, 'possibilities removed: ', updated_possibilities.ammount_removed)
+                // console.warn(`---> Useful X-wing pair found (${solvedCount} numbers solved to this point): `, x_wing_pair, 'possibilities removed: ', updated_possibilities.ammount_removed)
                 possibilities_grid = updated_possibilities.possibilities_grid
                 solvingStrategy = Math.max(solvingStrategy, 6)
                 continue
@@ -557,7 +647,7 @@ class DifficultyHandler {
 
             if (solvingStrategy >= 1) difficulty = 2 //normal
             if (solvingStrategy >= 3) difficulty = 3 //hard
-            if (solvingStrategy >= 5) difficulty = 4 //Expert
+            if (solvingStrategy >= 6) difficulty = 4 //Expert
 
             if (totalEmpty > 14 && totalEmpty <= 25) difficulty = 0 //novice
             if (totalEmpty > 25 && totalEmpty <= 35) difficulty = 1 //easy
