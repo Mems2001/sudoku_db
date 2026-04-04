@@ -81,7 +81,7 @@ async function findProfilesByGameId(game_id) {
     return profiles
 }
 
-async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight, highlightColor, inputMode}, user_id) {
+async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight, highlightColor, inputMode, otherPlayerHighlight}, user_id) {
     const transaction = await models.sequelize.transaction()
     // console.log('🔧 Service: updateGameSettingsByUserId called with user_id =', user_id)
 
@@ -91,12 +91,13 @@ async function updateGameSettingsByUserId({cellsHighlight, numbersHighlight, hig
                 user_id
             }
         })
-        console.log('🔧 Service: Profile found?', !!gameSettings, 'Profile =', gameSettings)
+        // console.log('🔧 Service: Profile found?', !!gameSettings, 'Profile =', gameSettings)
         await gameSettings.update({
             cells_highlight: cellsHighlight,
             numbers_highlight: numbersHighlight,
             highlight_color: highlightColor,
-            input_mode: inputMode
+            input_mode: inputMode,
+            other_player_highlight: otherPlayerHighlight
         }, {transaction})
 
         await transaction.commit()

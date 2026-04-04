@@ -137,6 +137,10 @@ const initializeSocket = (server) => {
       }
     })
 
+    socket.on('other-player-focus', (otherPlayerFocus) => {
+      socket.broadcast.emit('other-player-focus-2', otherPlayerFocus)
+    })
+
     socket.on("multiplayer-gameover" , () => {
       socket.broadcast.emit('multiplayer-gameover', true)
     })
@@ -157,10 +161,10 @@ const initializeSocket = (server) => {
           console.log("---> :", sockets , activeRooms)
           const game = await GamesService.findGameById(room)
           console.log('---> game found:')
-          // console.log("---> :", game)
+          console.log("---> :", game)
 
           if (user_data) {
-            console.log(user_data)
+            console.log("---> user data:", user_data)
             console.log(`---> removing user ${user_data.user_id} from room ${room}`)
 
             const player = await PlayersService.findPlayerByGameIdUserId(game.id, user_data.user_id)

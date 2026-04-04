@@ -150,7 +150,8 @@ async function authenticateSession (req ,res) {
                         cells_highlight: gameSettings && gameSettings.cells_highlight ? gameSettings.cells_highlight : true,
                         numbers_highlight: gameSettings && gameSettings.numbers_highlight ? gameSettings.numbers_highlight : true,
                         highlight_color: gameSettings && gameSettings.highlight_color ? gameSettings.highlight_color : "blue",
-                        input_mode: gameSettings && gameSettings.input_mode ? gameSettings.input_mode : 0
+                        input_mode: gameSettings && gameSettings.input_mode ? gameSettings.input_mode : 0,
+                        other_player_highlight: gameSettings && gameSettings.other_player_highlight ? gameSettings.other_player_highlight : true
                     }
                 })
             }  else {

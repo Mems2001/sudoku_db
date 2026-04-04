@@ -23,6 +23,7 @@ module.exports = (sequelize, DataTypes) => {
     cells_highlight: DataTypes.BOOLEAN,
     numbers_highlight: DataTypes.BOOLEAN,
     highlight_color: DataTypes.STRING,
+    other_player_highlight: DataTypes.BOOLEAN,
     input_mode: DataTypes.INTEGER
   }, {
     sequelize,

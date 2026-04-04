@@ -47,6 +47,12 @@ module.exports = {
           defaultValue: "blue",
           field: "highlight_color"
         },
+        otherPlayerHighlight: {
+          type: Sequelize.BOOLEAN,
+          allowNull: false,
+          defaultValue: true,
+          field: "other_player_highlight"
+        },
         inputMode: {
           type: Sequelize.INTEGER, // 0 -> Buttons, 1 -> Keyboard, 2 -> Wheel
           allowNull: false,
