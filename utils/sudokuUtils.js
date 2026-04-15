@@ -1,5 +1,3 @@
-const { col } = require("sequelize");
-
 class SudokuUtils {
     static throwRandomNumber(min, max) {
         const pseudoRandom = Math.floor(Math.random() * (max - min))
@@ -177,51 +175,35 @@ class SudokuUtils {
         return {possibilities_grid, changes}
     }
 
-    static isConstraintUseful(possibilities_grid, constraint) {
-
-        const { p1, p2, p3, values, location } = constraint
-        const [v1, v2, v3] = values
-
-        // Helper to check a specific cell
-        function canPrune (r, c) {
-            const cell_possibilities = possibilities_grid[r][c]
-            if (!Array.isArray(cell_possibilities)) return false
-
-            // Skip the constraint cells themselves
-            const isP1 = (r === p1.row && c === p1.col)
-            const isP2 = (r === p2.row && c === p2.col)
-            const isP3 = (p3 && r === p3.row && c === p3.col)
-            if (isP1 || isP2 || isP3) return false
-
-            return cell_possibilities.includes(v1) || cell_possibilities.includes(v2) || cell_possibilities.includes(v3 ?? 10)
-        }
-
-        // 1. Check Row (if they share it)
-        if (location.includes('row')) {
-            for (let c = 0; c < 9; c++) if (canPrune(p1.row, c)) return true
-        }
-
-        // 2. Check Column (if they share it)
-        if (location.includes('col')) {
-            for (let r = 0; r < 9; r++) if (canPrune(r, p1.col)) return true
-        }
-
-        // 3. Check Quadrant (if they share it)
-        const rStart1 = p1.row - (p1.row % 3)
-        const cStart1 = p1.col - (p1.col % 3)
-        const rStart2 = p2.row - (p2.row % 3)
-        const cStart2 = p2.col - (p2.col % 3)
-
-        // Only check quadrant if they are in the same quadrant
-        if (rStart1 === rStart2 && cStart1 === cStart2) {
-            for (let r = 0; r < 3; r++) {
-                for (let c = 0; c < 3; c++) {
-                    if (canPrune(rStart1 + r, cStart1 + c)) return true
+    static checkUselessPoints1(useless_points, candidate_constraint) {
+        for (const point of useless_points) {
+                    const p1_row_check = point.p1.row === candidate_constraint.p1.row
+                    const p1_col_check = point.p1.col === candidate_constraint.p1.col
+                    const p2_row_check = point.p2.row === candidate_constraint.p2.row
+                    const p2_col_check = point.p2.col === candidate_constraint.p2.col
+                    const p3_row_check = point.p3 && candidate_constraint.p3 ? point.p3.row === candidate_constraint.p3.row : true
+                    const p3_col_check = point.p3 && candidate_constraint.p3 ? point.p3.col === candidate_constraint.p3.col : true
+                    const values_check = point.values.every(value => candidate_constraint.values.includes(value))
+                    const location_check = point.location.every(location => candidate_constraint.location.includes(location))
+        
+                    if (p1_row_check && p1_col_check && p2_row_check && p2_col_check && values_check && location_check && p3_row_check && p3_col_check) return true
                 }
-            }
+                return false
+    }
+
+    static checkUselessPoints(useless_points, candidate_constraint, type) {
+
+        switch (type) {
+            case "naked_pairs":
+                return this.checkUselessPoints1(useless_points, candidate_constraint)
+            case "pointing_singles":
+                return this.checkUselessPoints1(useless_points, candidate_constraint)
+            case "pointing_triples":
+                return this.checkUselessPoints1(useless_points, candidate_constraint)
+            case "x_wing_pairs":
+                return this.checkUselessPoints1(useless_points, candidate_constraint)
         }
 
-        return false
     }
 
     // Specific logic for puzzle creation
@@ -315,23 +297,10 @@ class SudokuUtils {
     static cleanHiddenPair(possibilities_grid, constraint) {
         const [row1, col1] = [constraint.p1.row, constraint.p1.col]
         const [row2, col2] = [constraint.p2.row, constraint.p2.col]
-        const possibilities_1 = possibilities_grid[row1][col1]
-        const possibilities_2 = possibilities_grid[row2][col2]
+        const allowedValues = new Set([constraint.values[0], constraint.values[1]])
 
-        for (const value of possibilities_1) {
-            if (value !== constraint.values[0] && value !== constraint.values[1]) {
-                const index = possibilities_1.indexOf(value)
-                // console.log(possibilities_grid[row1][col1])
-                possibilities_grid[row1][col1].splice(index, 1)
-            }
-        }
-        for (const value of possibilities_2) {
-            if (value !== constraint.values[0] && value !== constraint.values[1]) {
-                const index = possibilities_1.indexOf(value)
-                // console.log(possibilities_grid[row2][col2])
-                possibilities_grid[row2][col2].splice(index, 1)
-            }
-        }
+        possibilities_grid[row1][col1] = possibilities_grid[row1][col1].filter(value => allowedValues.has(value))
+        possibilities_grid[row2][col2] = possibilities_grid[row2][col2].filter(value => allowedValues.has(value))
 
         return possibilities_grid
     }

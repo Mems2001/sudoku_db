@@ -120,7 +120,7 @@ class Puzzle {
          */
         function backtrack(current_grid, index, ammount_removed, possibilities_grid) {
             // console.log('---> Possibilities for backtracking:', JSON.stringify(possibilities_grid))
-            // console.warn('---> Attempts left: ', 500 - attempts)
+            // console.warn('---> Attempts: ', attempts, " from a max of: ", max_attempts)
 
             // 1. We verify if the loop limit was reached.
             if (attempts >= max_attempts) return "limit_reached"
@@ -134,7 +134,8 @@ class Puzzle {
                     console.log('Success! puzzle obtained with difficulty: ', difficulty, ", ", ammount_removed, ' numbers removed and ', attempts, ' local attempts. Strategies used: ', auxDiff.strategies_used)
                     return current_grid
                 }
-
+                    
+                // console.log("The required difficulty was not obtained")
                 return null
             }
 
@@ -157,7 +158,7 @@ class Puzzle {
 
                 // If we get to this point then the puzzle is not solvable, so we backtrack. We do not need to revert the possibilities_grid changes since #isSolvable provides an updated one each time it is called.
                 current_grid[row][col] = backup
-                // console.log('---> Failed to solve at: ', shuffledCoords[i], ' numbers removed to this point: ', ammount_removed + 1, ' backtracking...')
+                // console.log('---> Failed to solve at: ', shuffledCoords[i], ' numbers removed to this point: ', ammount_removed + 1, ' with a maximum of: ', difficulty_conditions.max, ' backtracking...')
             }
 
             //If the puzzle is not solvable at all this returns null and backtrack is called again but with reset values.
@@ -168,9 +169,10 @@ class Puzzle {
         
         const final_result = backtrack(grid, 0, 0, possibilities)
         if (final_result === 'limit_reached') {
-            console.error(`Max local attempts reached (${attempts})`)
+            console.error(`Max local attempts reached (${attempts}), or difficulty check failed`)
             return null
         }
+        if (!final_result) return null
         return final_result
     }
 

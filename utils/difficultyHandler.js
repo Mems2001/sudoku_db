@@ -143,7 +143,7 @@ class DifficultyHandler {
     }
 
     // Look for two cells with the same two posible numbers. This means those can be removed as posibilities for all the other cells in the same row, column or quadrant.
-    #findNakedPair(grid, possibilities_grid) {
+    #findNakedPair(grid, possibilities_grid, useless_naked_pairs) {
         //1. We need a map of all possibilities for all empty cells first
         const possibilitiesMap = []
         for (let r = 0; r < 9; r++) {
@@ -183,10 +183,8 @@ class DifficultyHandler {
                             location
                         }
                         
-                        if (Utils.isConstraintUseful(possibilities_grid, candidateConstraint)) {
-                            // We would now remove p1.p numbers from other cells in that unit. If that removal results in a new Naked Single elsewhere, the logic has progressed.
-                            return { p1, p2, values: p1.values, location }
-                        }
+                        if (useless_naked_pairs && Utils.checkUselessPoints(useless_naked_pairs, candidateConstraint, "naked_pairs")) continue
+                        return { p1, p2, values: p1.values, location }
                     }
                 }
             }
@@ -195,9 +193,9 @@ class DifficultyHandler {
     }
 
     /**
-     * Pointing Pairs/Triples. If all candidates for a number in a quadrant are restricted to a single row or column, that number can be removed from the rest of that row or column outside the quadrant.
+     * Pointing Pairs/Triples. If all position candidates for a number in a quadrant are restricted to a single row or column, that number can be removed from the rest of that row or column outside the quadrant.
      */
-    #findPointingTriple(grid, possibilities_grid) {
+    #findPointingTriple(grid, possibilities_grid, useless_pointing_triples) {
         //Iterate  by quadrants
         for (let b = 0; b < 9; b++) {
             const startR = Math.floor(b / 3) * 3
@@ -214,7 +212,7 @@ class DifficultyHandler {
                 }
             }
             
-            if (possibleCells.length === 3) {
+            if (possibleCells.length === 3) { // Here's something to imprive, check it later.
                 // console.warn(possibleCells)
                 const values = Array.from(new Set(possibleCells.map(cell => cell.values).flat()))
                 // console.warn(values)
@@ -240,10 +238,10 @@ class DifficultyHandler {
                         values,
                         location
                     }
-                    // console.log('---> Candidate pointer found: ', constraint)
-                    if (Utils.isConstraintUseful(possibilities_grid, constraint)) {
-                        return constraint
-                    }
+                    // console.log('---> Candidate pointing triple found: ', constraint)
+                    
+                    if (useless_pointing_triples && Utils.checkUselessPoints(useless_pointing_triples, constraint, "pointing_triples")) continue
+                    return constraint
                 }
             }
         }
@@ -251,12 +249,13 @@ class DifficultyHandler {
     }
 
     /**
-     * This functions looks for groups of 2 or 3 cells within a box and row or column that all contain the same single candidate. If so, that candidate can be removed from the rest of that row or column outside the box.
+     * This functions looks for groups of 2 or 3 cells within a box and row or column that all contain the same candidate. If so, that candidate can be removed from the rest of that row or column outside the box.
      * @param {*} grid 
      * @param {*} possibilities_grid 
      * @returns 
      */
-    #findPointingSingles(grid, possibilities_grid) {
+    #findPointingSingles(grid, possibilities_grid, useless_pointing_singles) {
+        // Check by quadrants
         for (let q = 0; q < 9; q ++) {
             const startR = Math.floor(q / 3) * 3
             const startC = (q % 3) * 3
@@ -276,7 +275,7 @@ class DifficultyHandler {
     
                 if (possibleCells.length >= 2 && possibleCells.length <= 3) {
                     const values = Array.from(new Set(possibleCells.map(cell => cell.values).flat()))
-                    if (values.length > 1) continue
+                    if (values.length > 1) continue // Here's something wrong, check it later
                     const location = []
                     const sameRow = possibleCells.every(cell => cell.row === possibleCells[0].row)
                     const sameCol = possibleCells.every(cell => cell.col === possibleCells[0].col)
@@ -292,9 +291,9 @@ class DifficultyHandler {
                             location
                         }
                         // console.log('---> Found pointing single:', constraint)
-                        if (Utils.isConstraintUseful(possibilities_grid, constraint)) {
-                            return constraint
-                        }
+                        
+                        if (useless_pointing_singles && Utils.checkUselessPoints(useless_pointing_singles, constraint, "pointing_singles")) continue
+                        return constraint
                     }
                 }
             }
@@ -340,11 +339,13 @@ class DifficultyHandler {
                             if (positions1[0].col === positions2[0].col && positions1[1].col === positions2[1].col) {
                                 if (this.#getPossibleValues(positions1[0].row, positions1[0].col, possibilities_grid).length > 2 || this.#getPossibleValues(positions2[1].row, positions2[1].col, possibilities_grid).length > 2) {
                                     // console.log('row hidden pair')
-                                    return {
-                                    p1: {row: positions1[0].row, col: positions1[0].col},
-                                    p2: {row: positions2[1].row, col: positions2[1].col},
-                                    values: [parseInt(keys[i]), parseInt(keys[j])]
+                                    const candidate_constraint = {
+                                        p1: {row: positions1[0].row, col: positions1[0].col},
+                                        p2: {row: positions2[1].row, col: positions2[1].col},
+                                        values: [parseInt(keys[i]), parseInt(keys[j])]
                                     }
+
+                                    return candidate_constraint
                                 }
                             }
                         }
@@ -385,11 +386,13 @@ class DifficultyHandler {
                             if (positions1[0].row === positions2[0].row && positions1[1].row === positions2[1].row) {
                                 if (this.#getPossibleValues(positions1[0].row, positions1[0].col, possibilities_grid).length > 2 || this.#getPossibleValues(positions2[1].row, positions2[1].col, possibilities_grid).length > 2) {
                                     // console.log('column hidden pair')
-                                    return {
-                                    p1: {row: positions1[0].row, col: positions1[0].col},
-                                    p2: {row: positions2[1].row, col: positions2[1].col},
-                                    values: [parseInt(keys[i]), parseInt(keys[j])]
+                                    const candidate_constraint = {
+                                        p1: {row: positions1[0].row, col: positions1[0].col},
+                                        p2: {row: positions2[1].row, col: positions2[1].col},
+                                        values: [parseInt(keys[i]), parseInt(keys[j])]
                                     }
+
+                                    return candidate_constraint
                                 }
                             }
                         }
@@ -432,11 +435,13 @@ class DifficultyHandler {
                             if (positions1[0].row === positions2[0].row && positions1[1].row === positions2[1].row && positions1[0].col === positions2[0].col && positions1[1].col === positions2[1].col) {
                                 if (this.#getPossibleValues(positions1[0].row, positions1[0].col, possibilities_grid).length > 2 || this.#getPossibleValues(positions2[1].row, positions2[1].col, possibilities_grid).length > 2) {
                                     // console.log('quadrant hidden pair')
-                                    return {
-                                    p1: {row: positions1[0].row, col: positions1[0].col},
-                                    p2: {row: positions2[1].row, col: positions2[1].col},
-                                    values: [parseInt(keys[i]), parseInt(keys[j])]
+                                    const candidate_constraint = {
+                                        p1: {row: positions1[0].row, col: positions1[0].col},
+                                        p2: {row: positions2[1].row, col: positions2[1].col},
+                                        values: [parseInt(keys[i]), parseInt(keys[j])]
                                     }
+
+                                    return candidate_constraint
                                 }
                             }
                         }
@@ -452,8 +457,10 @@ class DifficultyHandler {
      * @param {*} possibilities_grid
      * @returns 
      */
-    #findXWingPairs(grid, possibilities_grid) {
+    #findXWingPairs(grid, possibilities_grid, useless_x_wing_pairs) {
         for (let num = 1; num <= 9; num++) {
+
+            // By rows
             const selectedRows = []
             for (let r = 0; r < 9; r++) {
                 const selectedPoints = []
@@ -473,12 +480,22 @@ class DifficultyHandler {
                         }
                         if (matches === 2) {    
                             // console.log('---> Selected rows for X-wing: ', selectedRows)
-                            return {p1: selectedRows[i][0], p2: selectedRows[j][1], values: selectedRows[i][0].values, location: ['x-col']} 
+                            const candidate_constraint = {
+                                p1: selectedRows[i][0], 
+                                p2: selectedRows[j][1],
+                                p3: null,
+                                values: selectedRows[i][0].values, 
+                                location: ['x-col']
+                            }
+
+                            if (useless_x_wing_pairs && Utils.checkUselessPoints(useless_x_wing_pairs, candidate_constraint, "x_wing_pairs")) continue
+                            return candidate_constraint
                         }         
                     }
                 }
             }
 
+            // By columns
             const selectedCols = []
             for (let c = 0; c < 9; c++) {
                 const selectedPoints = []
@@ -496,9 +513,37 @@ class DifficultyHandler {
                                 if (point.row === point2.row) matches ++ 
                             }
                         }
-                        if (matches === 2) {    
-                            return {p1: selectedCols[i][0], p2: selectedCols[j][1], values: selectedCols[i][0].values, location: ['x-row']} 
+                        if (matches === 2) { 
+                            const candidate_constraint = {
+                                p1: selectedCols[i][0], 
+                                p2: selectedCols[j][1], 
+                                p3: null,
+                                values: selectedCols[i][0].values, 
+                                location: ['x-row']
+                            }
+                            
+                            if (useless_x_wing_pairs && Utils.checkUselessPoints(useless_x_wing_pairs, candidate_constraint, "x_wing_pairs")) continue
+                            return candidate_constraint
                         }         
+                    }
+                }
+            }
+        }
+
+        // console.log('No x_wing_pairs found')
+        return null
+    }
+
+    #findYWingPairs(grid, possibilities_grid) {
+        const bivalueCells = []
+
+        // Gather all cells that have exactly 2 possibilities
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (grid[r][c] === 0) {
+                    const values = this.#getPossibleValues(r, c, possibilities_grid)
+                    if (values.length === 2) {
+                        bivalueCells.push({ r, c, values })
                     }
                 }
             }
@@ -519,6 +564,8 @@ class DifficultyHandler {
         let solvingStrategy = 0
         const handler = new DifficultyHandler()
         let grid = JSON.parse(JSON.stringify(mainGrid))
+
+        // Solving control variables
         let totalEmpty = grid.flat().filter(v => v === 0).length
         let solvedCount = 0
         let naked_singles = 0
@@ -528,6 +575,9 @@ class DifficultyHandler {
         let pointing_singles = 0
         let hidden_pairs = 0
         let x_wing_pairs = 0
+
+        // Useless points tracing
+        let useless_points = {}
         
         // Iteration logic to keep trying to solve the puzzle until no strategies are left to apply. It runs out only when the strategies are over, not when the puzzle is solved. That's how we double check if it is solvable. If this returns undefined then the puzzle is not solvable after all.
         while (true) { 
@@ -538,7 +588,10 @@ class DifficultyHandler {
                 if (grid[row][col] === 0) {
                     const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
                     // console.log('Found hidden single:', hidden, JSON.stringify(updated_possibilities.possibilities_grid), JSON.stringify(grid), ' possibilities removed: ', updated_possibilities.changes.length)
-                    if (updated_possibilities.changes.length === 0) continue
+                    if (updated_possibilities.changes.length === 0) {
+                        console.log('Something went wrong, a hidden single is supposed to always give us a change. ', hidden)
+                        break
+                    }
 
                     grid[row][col] = value
                     solvedCount ++
@@ -555,7 +608,10 @@ class DifficultyHandler {
                 // if (naked_pairs) console.log('Found naked single:', single)
                 const {row, col, value} = naked_single
                 const updated_possibilities = Utils.removeFromPossibilities(possibilities_grid, value, row, col) // We update the possibilities grid to keep trying to solve the puzzle with other strategies.
-                if (updated_possibilities.changes.length === 0) continue
+                if (updated_possibilities.changes.length === 0) {
+                    console.log('Something went wrong, a naked single is supposed to always give us a change. ', naked_single)
+                    break
+                }
 
                 grid[row][col] = value
                 solvedCount ++
@@ -566,7 +622,7 @@ class DifficultyHandler {
             }  
 
             // 3. (remover) If stuck we now look for naked pairs. 
-            const pair = handler.#findNakedPair(grid, possibilities_grid)
+            const pair = handler.#findNakedPair(grid, possibilities_grid, useless_points['naked_pairs'] ?? undefined)
             if (pair) {
                 // Instead of breaking, we add the pair to our "constraints", and try the loop again to see if it changed the possibilities grid.
                 const new_constraint = {
@@ -579,8 +635,14 @@ class DifficultyHandler {
                 
                 const updated_possibilites = Utils.removeConstraintsFromPossibilities(possibilities_grid, new_constraint)
                 // Double check if progress was made. The first check is at isConstraintUseful inside #findNakedPairs
-                if (updated_possibilites.ammount_removed === 0) continue
-                // console.warn(`--->Useful naked pair found (${solvedCount} numbers solved to this point): `, new_constraint, JSON.stringify(updated_possibilites.possibilities_grid), JSON.stringify(grid), ' possibilities removed: ', updated_possibilites.ammount_removed)
+                if (updated_possibilites.ammount_removed === 0) {
+                    // console.log('---> Useless naked pair found: ', pair)
+                    if (useless_points['naked_pairs']) useless_points['naked_pairs'].push(pair)
+                    else useless_points['naked_pairs'] = [pair]
+                    // console.log(useless_points)
+                    continue
+                }
+                // console.warn(`---> Useful naked pair found (${solvedCount} numbers solved to this point): `, new_constraint, JSON.stringify(updated_possibilites.possibilities_grid), JSON.stringify(grid), ' possibilities removed: ', updated_possibilites.ammount_removed)
                 naked_pairs ++
                 possibilities_grid = updated_possibilites.possibilities_grid
                 solvingStrategy = Math.max(solvingStrategy, 2)
@@ -588,10 +650,16 @@ class DifficultyHandler {
             }
 
             //5. (remover) Now we look for pointing singles.
-            const pointing_single = handler.#findPointingSingles(grid, possibilities_grid)
+            const pointing_single = handler.#findPointingSingles(grid, possibilities_grid, useless_points['pointing_singles'] ?? undefined)
             if (pointing_single) {
                 const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, pointing_single)
-                if (updated_possibilities.ammount_removed === 0) break
+                if (updated_possibilities.ammount_removed === 0) {
+                    // console.log('---> Useless pointing single found: ', pointing_single)
+                    if (useless_points['pointing_singles']) useless_points['pointing_singles'].push(pointing_single)
+                    else useless_points['pointing_singles'] = [pointing_single]
+                    // console.log(useless_points)
+                    continue
+                }
                 pointing_singles ++
                 // console.warn(`---> Useful pointing single found (${solvedCount} numbers solved to this point): `, pointing_single, 'possibilities removed: ', updated_possibilities.ammount_removed)
                 possibilities_grid = updated_possibilities.possibilities_grid
@@ -600,10 +668,16 @@ class DifficultyHandler {
             }
             
             //4. (remover) If still stuck we look for pointing pairs/triples.
-            const pointing_triple = handler.#findPointingTriple(grid, possibilities_grid)
+            const pointing_triple = handler.#findPointingTriple(grid, possibilities_grid, useless_points['pointing_triples'] ?? undefined)
             if (pointing_triple) {
                 const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, pointing_triple)
-                if (updated_possibilities.ammount_removed === 0) break
+                if (updated_possibilities.ammount_removed === 0) {
+                    // console.log('---> Useless pointing triple found: ', pointing_triple)
+                    if (useless_points['pointing_triples']) useless_points['pointing_triples'].push(pointing_triple)
+                    else useless_points['pointing_triples'] = [pointing_triple]
+                    // console.log(useless_points)
+                    continue
+                }
                 pointing_triples ++
                 // console.warn(`---> Useful pointing triple found (${solvedCount} numbers solved to this point): `, pointing_triple, 'possibilities removed: ', updated_possibilities.ammount_removed)
                 possibilities_grid = updated_possibilities.possibilities_grid
@@ -622,10 +696,16 @@ class DifficultyHandler {
             }
 
             //7. (remover) If still stuck we look for X-wing pairs.
-            const x_wing_pair = handler.#findXWingPairs(grid, possibilities_grid)
+            const x_wing_pair = handler.#findXWingPairs(grid, possibilities_grid, useless_points['x_wing_pairs'] ?? undefined)
             if (x_wing_pair) {
                 const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, x_wing_pair)
-                if (updated_possibilities.ammount_removed === 0) break
+                if (updated_possibilities.ammount_removed === 0) {
+                    // console.log('---> Useless X-wing pair found: ', x_wing_pair)
+                    if (useless_points['x_wing_pairs']) useless_points['x_wing_pairs'].push(x_wing_pair)
+                    else useless_points['x_wing_pairs'] = [x_wing_pair]
+                    // console.log(useless_points.x_wing_pairs.length)
+                    continue
+                }
                 x_wing_pairs ++
                 // console.warn(`---> Useful X-wing pair found (${solvedCount} numbers solved to this point): `, x_wing_pair, 'possibilities removed: ', updated_possibilities.ammount_removed)
                 possibilities_grid = updated_possibilities.possibilities_grid
@@ -642,8 +722,7 @@ class DifficultyHandler {
         const isFullySolved = (solvedCount === totalEmpty)
 
         if (isFullySolved) {
-            // if (naked_pairs) console.log('---> Fully solved')
-            // if (naked_pairs) console.log(`grid status(${solvedCount} / ${totalEmpty}): `, JSON.stringify(grid), JSON.stringify(possibilities_grid))
+            // console.log('---> Puzzle fully solved during difficulty evaluation. Final grid: ', JSON.stringify(grid))
 
             if (solvingStrategy >= 1) difficulty = 2 //normal
             if (solvingStrategy >= 3) difficulty = 3 //hard
@@ -652,10 +731,10 @@ class DifficultyHandler {
             if (totalEmpty > 14 && totalEmpty <= 25) difficulty = 0 //novice
             if (totalEmpty > 25 && totalEmpty <= 35) difficulty = 1 //easy
         } else {
-            // if (naked_pairs) console.log(`---> Grid status(${solvedCount} / ${totalEmpty}): `, JSON.stringify(grid), JSON.stringify(possibilities_grid))
+            // console.log("Stuck during difficulty evaluation. Solved ", solvedCount, " out of ", totalEmpty, " empty cells. Final grid: ", JSON.stringify(grid), "Final possibilities: ", JSON.stringify(possibilities_grid))
         }
 
-        // if (naked_pairs) console.log('---> Difficulty determined:', difficulty, solvingStrategy, "removed numbers: ", removed_numbers, "solved numbers: ", solvedCount, "total empty: ", totalEmpty, ` Naked singles: ${naked_singles}, Hidden singles: ${hidden_singles}, Naked pairs: ${naked_pairs}, Pointing groups: ${pointing_triple}`)
+        // console.log('---> Difficulty determined:', difficulty, solvingStrategy, "removed numbers: ", removed_numbers, "solved numbers: ", solvedCount, "total empty: ", totalEmpty, `strategies_used: {${naked_singles}, ${hidden_singles}, ${naked_pairs}, ${pointing_singles}, ${pointing_triples}, ${hidden_pairs}, ${x_wing_pairs}}`)
         return {difficulty, solvingStrategy, strategies_used: {naked_singles, hidden_singles, naked_pairs, pointing_singles, pointing_triples, hidden_pairs, x_wing_pairs}}
     }
 }
