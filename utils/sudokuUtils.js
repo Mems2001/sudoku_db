@@ -291,22 +291,26 @@ class SudokuUtils {
                     break
                 case 'x-col':
                     for (let r = 0; r < 9; r++) {
-                        if (!Array.isArray(possibilities_grid[r][col])) continue
-                        const index1 = possibilities_grid[r][col].indexOf(constraint.values[0])
-                        if (index1 >= 0 && (r !== row && r !== row2)) {possibilities_grid[r][col].splice(index1, 1); ammount_removed++}
-                        if (!Array.isArray(possibilities_grid[r][col2])) continue
-                        const index2 = possibilities_grid[r][col2].indexOf(constraint.values[0])
-                        if (index2 >= 0 && (r !== row && r !== row2)) {possibilities_grid[r][col2].splice(index2, 1); ammount_removed++}
+                        if (Array.isArray(possibilities_grid[r][col])) {
+                            const index1 = possibilities_grid[r][col].indexOf(constraint.values[0])
+                            if (index1 >= 0 && (r !== row && r !== row2)) {possibilities_grid[r][col].splice(index1, 1); ammount_removed++}
+                        }
+                        if (Array.isArray(possibilities_grid[r][col2])) {
+                            const index2 = possibilities_grid[r][col2].indexOf(constraint.values[0])
+                            if (index2 >= 0 && (r !== row && r !== row2)) {possibilities_grid[r][col2].splice(index2, 1); ammount_removed++}
+                        }
                     }
                     break
                 case 'x-row':
                     for (let c = 0; c < 9; c++) {
-                        if (!Array.isArray(possibilities_grid[row][c])) continue
-                        const index1 = possibilities_grid[row][c].indexOf(constraint.values[0])
-                        if (index1 >= 0 && (c !== col && c !== col2)) {possibilities_grid[row][c].splice(index1, 1); ammount_removed++}
-                        if (!Array.isArray(possibilities_grid[row2][c])) continue
-                        const index2 = possibilities_grid[row2][c].indexOf(constraint.values[0])
-                        if (index2 >= 0 && (c !== col && c !== col2)) {possibilities_grid[row2][c].splice(index2, 1); ammount_removed++}
+                        if (Array.isArray(possibilities_grid[row][c])) {
+                            const index1 = possibilities_grid[row][c].indexOf(constraint.values[0])
+                            if (index1 >= 0 && (c !== col && c !== col2)) {possibilities_grid[row][c].splice(index1, 1); ammount_removed++}
+                        }
+                        if (Array.isArray(possibilities_grid[row2][c])) {
+                            const index2 = possibilities_grid[row2][c].indexOf(constraint.values[0])
+                            if (index2 >= 0 && (c !== col && c !== col2)) {possibilities_grid[row2][c].splice(index2, 1); ammount_removed++}
+                        }
                     }
                     break
             }
