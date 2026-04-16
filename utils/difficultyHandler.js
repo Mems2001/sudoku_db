@@ -684,20 +684,78 @@ class DifficultyHandler {
         return null
     }
 
-    #findYWingPairs(grid, possibilities_grid) {
+    #findYWingPairs(possibilities_grid) {
         const bivalueCells = []
 
         // Gather all cells that have exactly 2 possibilities
         for (let r = 0; r < 9; r++) {
             for (let c = 0; c < 9; c++) {
-                if (grid[r][c] === 0) {
+                if (possibilities_grid[r][c] !== 0) {
                     const values = this.#getPossibleValues(r, c, possibilities_grid)
                     if (values.length === 2) {
-                        bivalueCells.push({ r, c, values })
+                        bivalueCells.push({ row: r, col: c, values })
                     }
                 }
             }
         }
+
+        // We will now check if the meet the values' requirements. This is, among groups of three they must have just three possible values.
+        if (bivalueCells.length >= 3) {
+            // console.log (bivalueCells)
+            for (let x = 0; x < bivalueCells.length; x++) {
+                for (let y = x + 1; y < bivalueCells.length; y++) {
+                    for (let z = y + 1; z < bivalueCells.length; z++) {
+                        const merged_values = new Set()
+                        const cells = [bivalueCells[x], bivalueCells[y], bivalueCells[z]]
+                        cells.forEach(cell => {
+                            cell.values.forEach(value => merged_values.add(value))
+                        })
+                        // We check if each cell share with each other just one value coincidence
+                        let coincidences_allowed = true
+                        cells.forEach((cell, index) => {
+                            const indexes = [0, 1, 2]
+                            indexes.splice(index, 1)
+                            indexes.forEach(i => {
+                                const alt_merged_values = new Set()
+                                cell.values.forEach(value => alt_merged_values.add(value))
+                                cells[i].values.forEach(value => alt_merged_values.add(value))
+                                if (alt_merged_values.size !== 3) coincidences_allowed = false
+                            })
+                        })
+
+                        if (merged_values.size !== 3 || !coincidences_allowed) continue
+                        // console.log(merged_values)
+
+                        const relations = {}
+                        cells.forEach((cell, index) => {
+                            const indexes = [0, 1, 2]
+                            indexes.splice(index, 1)
+                            indexes.forEach(i => {
+                                const same_row = cell.row === cells[i].row
+                                const same_col = cell.col === cells[i].col
+                                const same_quadrant = Math.floor(cell.row / 3) * 3 + Math.floor(cell.col / 3) === Math.floor(cells[i].row / 3) * 3 + Math.floor(cells[i].col / 3)
+                                const key_position = `${cell.row},${cell.col}`
+                                if (!relations[key_position]) relations[key_position] = []
+                                if (same_row) relations[key_position].push('row')
+                                if (same_col) relations[key_position].push('col')
+                                if (same_quadrant) relations[key_position].push('quadrant')
+                            })
+
+                        })
+                        const pivots = []
+                        const keys = Object.keys(relations)
+                        keys.forEach(key => {
+                            if (relations[key].length === 3) pivots.push(key)
+                        })
+                        if (pivots.length === 1) {
+                            console.log('We have a pivot!: ', pivots, cells)
+                        }
+                    }
+                }
+            }
+        }
+
+        return null
     }
 
     /**
@@ -864,6 +922,9 @@ class DifficultyHandler {
                 solvingStrategy = Math.max(solvingStrategy, 8)
                 continue
             }
+
+            //10. (remover) Y-wing pairs.
+            const y_wing_triple = handler.#findYWingPairs(possibilities_grid)
 
             // If we reach here, we are stuck (No Singles left)
             // console.log(solvedCount, totalEmpty, JSON.stringify(possibilities_grid))

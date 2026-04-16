@@ -22,7 +22,7 @@ module.exports = {
       // We'll create 100 sudokus and puzzles for testing
       let sudokus = []
       let puzzles = []
-      for (let i=0 ; i < 100 ; i++) {
+      for (let i=0 ; i < 10 ; i++) {
         const grid = Sudoku.generateSudoku()
         let number = '';
         for (let i = 0; i < 9; i++) {
