@@ -91,6 +91,8 @@ class DifficultyHandler {
                 }
             }
         }
+
+        return null
     }
 
     /**
@@ -139,6 +141,7 @@ class DifficultyHandler {
                 if (possibleCells.length === 1) return { row: possibleCells[0].r, col: possibleCells[0].c, value: num }
             }
         }
+
         return null
     }
 
@@ -195,12 +198,11 @@ class DifficultyHandler {
     /**
      * Pointing Pairs/Triples. If all position candidates for a number in a quadrant are restricted to a single row or column, that number can be removed from the rest of that row or column outside the quadrant.
      */
-    #findPointingTriple(grid, possibilities_grid, useless_pointing_triples) {
+    #findPointingTriples(grid, possibilities_grid, useless_pointing_triples) {
         //Iterate  by quadrants
         for (let b = 0; b < 9; b++) {
             const startR = Math.floor(b / 3) * 3
             const startC = (b % 3) * 3
-
             let possibleCells = []
             for (let i = 0; i < 3; i++) {
                 for (let j = 0; j < 3; j++) {
@@ -211,8 +213,8 @@ class DifficultyHandler {
                     }
                 }
             }
-            
-            if (possibleCells.length === 3) { // Here's something to imprive, check it later.
+
+            if (possibleCells.length === 3) { // Here's something to improve, check it later.
                 // console.warn(possibleCells)
                 const values = Array.from(new Set(possibleCells.map(cell => cell.values).flat()))
                 // console.warn(values)
@@ -227,7 +229,7 @@ class DifficultyHandler {
                 const sameCol = possibleCells.every(cell => cell.col === possibleCells[0].col)
                 if (sameRow) location.push('row')
                 if (sameCol) location.push('col')
-                    
+
                 if (location.length > 0) {                   
                     location.push('quadrant')
                     // Check if this actually eliminates anything outside the box. This is crucial to ensure the logic actually "progresses"
@@ -237,14 +239,84 @@ class DifficultyHandler {
                         p3: possibleCells[2] ?? null,
                         values,
                         location
-                    }
+                                            }
                     // console.log('---> Candidate pointing triple found: ', constraint)
-                    
+                                        
                     if (useless_pointing_triples && Utils.checkUselessPoints(useless_pointing_triples, constraint, "pointing_triples")) continue
                     return constraint
                 }
             }
         }
+        return null
+    }
+
+    /**
+     * Naked Triples. If there is a set of three cells within a position unit (row, column or quadrant) that shares between only three possible values and each cell having 2 or 3 values, then it is a naked triple.
+     */
+    #findNakedTriples(possibilities_grid, useless_naked_triples) {
+        const units = Utils.getAllUnits()
+
+        for (const unit of units) {
+            const candidates = []
+            unit.forEach(position => {
+                const values = possibilities_grid[position.row][position.col]
+                // We are only interested in cells with 2 or 3 values.
+                if (Array.isArray(values) && values.length <= 3 && values.length >= 2) {
+                    candidates.push(position)
+                }
+            })
+
+            if (candidates.length < 3) continue
+            // console.log(candidates)
+
+            // We will try each combination of 3 candidates to look for the ones that actually shares 3 values.
+            for (let x = 0; x < candidates.length; x++) {
+                for (let y = x + 1; y < candidates.length; y++) {
+                    for (let z = y + 1; z < candidates.length; z++) {
+                        const values1 = this.#getPossibleValues(candidates[x].row, candidates[x].col, possibilities_grid)
+                        const values2 = this.#getPossibleValues(candidates[y].row, candidates[y].col, possibilities_grid)
+                        const values3 = this.#getPossibleValues(candidates[z].row, candidates[z].col, possibilities_grid)
+                        const merged_values = new Set()
+                        values1.forEach(value => merged_values.add(value))
+                        values2.forEach(value => merged_values.add(value))
+                        values3.forEach(value => merged_values.add(value))
+
+                        if (merged_values.size !== 3) continue
+                        const provisional_triplet = [candidates[x], candidates[y], candidates[z]]
+                        // console.log(merged_values, provisional_triplet)
+
+                        const rows = new Set()
+                        provisional_triplet.forEach(cell => rows.add(cell.row))
+                        const cols = new Set()
+                        provisional_triplet.forEach(cell => cols.add(cell.col))
+                        const quadrants = new Set()
+                        provisional_triplet.forEach(cell => quadrants.add(Math.floor(cell.row / 3) * 3 + Math.floor(cell.col / 3)))
+                        
+                        const same_rows = rows.size === 1
+                        const same_cols = cols.size === 1
+                        const same_quadrants = quadrants.size === 1 
+
+                        const location = []
+                        if (same_rows) location.push('row')
+                        if (same_cols) location.push('col')
+                        if (same_quadrants) location.push('quadrant')
+
+                        const constraint = {
+                            p1: provisional_triplet[0],
+                            p2: provisional_triplet[1],
+                            p3: provisional_triplet[2],
+                            values: Array.from(merged_values),
+                            location
+                        }
+
+                        if (useless_naked_triples && Utils.checkUselessPoints(useless_naked_triples, constraint, "naked_triples")) continue
+
+                        return constraint
+                    }
+                }
+            }
+        }
+
         return null
     }
 
@@ -268,14 +340,14 @@ class DifficultyHandler {
                         let c = startC + j
                         if (grid[r][c] === 0) {
                             const values = this.#getPossibleValues(r, c, possibilities_grid)
-                            if (values.includes(num)) possibleCells.push({ row: r, col: c, values:[num] })
+                            if (values.includes(num)) possibleCells.push({ row: r, col: c, values:[num] }) // Here we set the values to be just the selected num because we are looking for cells with that number in common.
                         }
                     }
                 }
     
                 if (possibleCells.length >= 2 && possibleCells.length <= 3) {
                     const values = Array.from(new Set(possibleCells.map(cell => cell.values).flat()))
-                    if (values.length > 1) continue // Here's something wrong, check it later
+                    if (values.length > 1) continue // We double check if we're focusing on the value of interest.
                     const location = []
                     const sameRow = possibleCells.every(cell => cell.row === possibleCells[0].row)
                     const sameCol = possibleCells.every(cell => cell.col === possibleCells[0].col)
@@ -298,6 +370,8 @@ class DifficultyHandler {
                 }
             }
         }
+
+        return null
     }
 
     /**
@@ -449,6 +523,82 @@ class DifficultyHandler {
                 }
             }
         }
+
+        return null
+    }
+
+    /**
+     * This funciton will identify groups of three cells belonging to a same position unit (row, column or quadrant) which happens to have three possible values among them that are not present on other cells' values within the same unit. This means that we can delete those values from the other cells' possible values. 
+     * @param {*} possibilities_grid 
+     * @returns 
+     */
+    #findHiddenTriples(possibilities_grid) {
+        const units = Utils.getAllUnits()
+
+        for (const unit of units) {
+            const count = {}
+            unit.forEach(position => {
+                const values = this.#getPossibleValues(position.row, position.col, possibilities_grid)
+                if (Array.isArray(values)) {
+                    values.forEach(value => {
+                        if (!count[value]) count[value] = []
+                        count[value].push({row:position.row, col:position.col})
+                    })
+                }
+            })
+
+            // We filter the keys which represents an array of 2 or 3 postions. This represents values with 2 and 3 appeareances.
+            const candidate_keys = Object.keys(count).filter(key => count[key].length >= 2 && count[key].length <= 3)
+            if (candidate_keys.length >= 3) {
+                // console.log(candidate_keys)
+                for (let x = 0; x < candidate_keys.length; x ++) {
+                    for (let y = x + 1; y < candidate_keys.length; y++) {
+                        for (let z = y + 1; z < candidate_keys.length; z++) {
+                            const candidates = []
+                            const candidate1 = candidate_keys[x]
+                            const candidate2 = candidate_keys[y]
+                            const candidate3 = candidate_keys[z]
+                            candidates.push(candidate1)
+                            candidates.push(candidate2)
+                            candidates.push(candidate3)
+                            const cell_set = new Set()
+                            
+                            candidates.forEach(key => {
+                                count[key].forEach(position => cell_set.add(`${position.row},${position.col}`))
+                            })
+                            
+                            // We now look for groups of three values which appearances for a set of three cells, wihout repeating non. This means, we found 3 different values, each appearing at least two times within three different cells and exactly three. In other words, we found a hidden triple.
+                            if (cell_set.size === 3) {
+                                // console.log("Hidden triple found: ", cell_set)
+                                const cells = Array.from(cell_set).map(set =>
+                                    set.split(',').map(Number)
+                                )
+                                const triple_values = [Number(candidate1), Number(candidate2), Number(candidate3)]
+                                let isUseful = false
+                                for (const [r, c] of cells) {
+                                    const values = this.#getPossibleValues(r, c, possibilities_grid)
+                                    if (values.length > 3 || values.some(value => !triple_values.includes(value))) {
+                                        isUseful = true
+                                        break
+                                    }
+                                }
+
+                                const constraint = {
+                                    p1: {row: cells[0][0], col: cells[0][1]},
+                                    p2: {row: cells[1][0], col: cells[1][1]},
+                                    p3: {row: cells[2][0], col: cells[2][1]},
+                                    values: triple_values
+                                }
+                                
+                                if (isUseful) return constraint
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null
     }
 
     /**
@@ -571,9 +721,10 @@ class DifficultyHandler {
         let naked_singles = 0
         let hidden_singles = 0
         let naked_pairs = 0
-        let pointing_triples = 0
+        let naked_triples = 0
         let pointing_singles = 0
         let hidden_pairs = 0
+        let hidden_triples = 0
         let x_wing_pairs = 0
 
         // Useless points tracing
@@ -617,40 +768,12 @@ class DifficultyHandler {
                 solvedCount ++
                 naked_singles ++
                 possibilities_grid = updated_possibilities.possibilities_grid
-                solvingStrategy = Math.max(solvingStrategy, 1)
-                continue // Found something, iterate again to try with updated data.
-            }  
-
-            // 3. (remover) If stuck we now look for naked pairs. 
-            const pair = handler.#findNakedPair(grid, possibilities_grid, useless_points['naked_pairs'] ?? undefined)
-            if (pair) {
-                // Instead of breaking, we add the pair to our "constraints", and try the loop again to see if it changed the possibilities grid.
-                const new_constraint = {
-                    p1: pair.p1,
-                    p2: pair.p2,
-                    p3: undefined,
-                    values: pair.p1.values,
-                    location: pair.location
-                }
-                
-                const updated_possibilites = Utils.removeConstraintsFromPossibilities(possibilities_grid, new_constraint)
-                // Double check if progress was made. The first check is at isConstraintUseful inside #findNakedPairs
-                if (updated_possibilites.ammount_removed === 0) {
-                    // console.log('---> Useless naked pair found: ', pair)
-                    if (useless_points['naked_pairs']) useless_points['naked_pairs'].push(pair)
-                    else useless_points['naked_pairs'] = [pair]
-                    // console.log(useless_points)
-                    continue
-                }
-                // console.warn(`---> Useful naked pair found (${solvedCount} numbers solved to this point): `, new_constraint, JSON.stringify(updated_possibilites.possibilities_grid), JSON.stringify(grid), ' possibilities removed: ', updated_possibilites.ammount_removed)
-                naked_pairs ++
-                possibilities_grid = updated_possibilites.possibilities_grid
                 solvingStrategy = Math.max(solvingStrategy, 2)
-                continue
+                continue // Found something, iterate again to try with updated data.
             }
 
             //5. (remover) Now we look for pointing singles.
-            const pointing_single = handler.#findPointingSingles(grid, possibilities_grid, useless_points['pointing_singles'] ?? undefined)
+            const pointing_single = handler.#findPointingSingles(grid, possibilities_grid, useless_points['pointing_singles'] ?? null)
             if (pointing_single) {
                 const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, pointing_single)
                 if (updated_possibilities.ammount_removed === 0) {
@@ -666,37 +789,66 @@ class DifficultyHandler {
                 solvingStrategy = Math.max(solvingStrategy, 3)
                 continue
             }
-            
-            //4. (remover) If still stuck we look for pointing pairs/triples.
-            const pointing_triple = handler.#findPointingTriple(grid, possibilities_grid, useless_points['pointing_triples'] ?? undefined)
-            if (pointing_triple) {
-                const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, pointing_triple)
-                if (updated_possibilities.ammount_removed === 0) {
-                    // console.log('---> Useless pointing triple found: ', pointing_triple)
-                    if (useless_points['pointing_triples']) useless_points['pointing_triples'].push(pointing_triple)
-                    else useless_points['pointing_triples'] = [pointing_triple]
+
+            // 3. (remover) If stuck we now look for naked pairs. 
+            const pair = handler.#findNakedPair(grid, possibilities_grid, useless_points['naked_pairs'] ?? null)
+            if (pair) {                
+                const updated_possibilites = Utils.removeConstraintsFromPossibilities(possibilities_grid, pair)
+                // Double check if progress was made. The first check is at isConstraintUseful inside #findNakedPairs
+                if (updated_possibilites.ammount_removed === 0) {
+                    // console.log('---> Useless naked pair found: ', pair)
+                    if (useless_points['naked_pairs']) useless_points['naked_pairs'].push(pair)
+                    else useless_points['naked_pairs'] = [pair]
                     // console.log(useless_points)
                     continue
                 }
-                pointing_triples ++
-                // console.warn(`---> Useful pointing triple found (${solvedCount} numbers solved to this point): `, pointing_triple, 'possibilities removed: ', updated_possibilities.ammount_removed)
-                possibilities_grid = updated_possibilities.possibilities_grid
+                // console.warn(`---> Useful naked pair found (${solvedCount} numbers solved to this point): `, new_constraint, JSON.stringify(updated_possibilites.possibilities_grid), JSON.stringify(grid), ' possibilities removed: ', updated_possibilites.ammount_removed)
+                naked_pairs ++
+                possibilities_grid = updated_possibilites.possibilities_grid
                 solvingStrategy = Math.max(solvingStrategy, 4)
                 continue
             }
 
-            //6. (remover)
-            const hidden_pair = handler.#findHiddenPairs(possibilities_grid)
-            if (hidden_pair) {
-                // console.warn(hidden_pair)
-                hidden_pairs ++
-                possibilities_grid = Utils.cleanHiddenPair(possibilities_grid, hidden_pair)
+            //4. (remover) If still stuck we look for pointing pairs/triples.
+            const naked_triple = handler.#findNakedTriples(possibilities_grid, useless_points['naked_triples'] ?? null)
+            if (naked_triple) {
+                const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, naked_triple)
+                if (updated_possibilities.ammount_removed === 0) {
+                    // console.log('---> Useless naked triple found: ', naked_triple)
+                    if (useless_points['naked_triples']) useless_points['naked_triples'].push(naked_triple)
+                    else useless_points['naked_triples'] = [naked_triple]
+                    // console.log(useless_points)
+                    continue
+                }
+                naked_triples ++
+                // console.log(`---> Useful pointing triple found (${solvedCount} numbers solved to this point): `, naked_triple, 'possibilities removed: ', updated_possibilities.ammount_removed)
+                possibilities_grid = updated_possibilities.possibilities_grid
                 solvingStrategy = Math.max(solvingStrategy, 5)
                 continue
             }
 
-            //7. (remover) If still stuck we look for X-wing pairs.
-            const x_wing_pair = handler.#findXWingPairs(grid, possibilities_grid, useless_points['x_wing_pairs'] ?? undefined)
+            //7. (remover)
+            const hidden_pair = handler.#findHiddenPairs(possibilities_grid)
+            if (hidden_pair) {
+                // console.warn(hidden_pair)
+                hidden_pairs ++
+                possibilities_grid = Utils.cleanHiddenPairOrTriple(possibilities_grid, hidden_pair)
+                solvingStrategy = Math.max(solvingStrategy, 6)
+                continue
+            }
+
+            //8. (remover)
+            const hidden_triple = handler.#findHiddenTriples(possibilities_grid)
+            if (hidden_triple) {
+                // console.log(hidden_triple)
+                hidden_triples ++
+                possibilities_grid = Utils.cleanHiddenPairOrTriple(possibilities_grid, hidden_triple)
+                solvingStrategy = Math.max(solvingStrategy, 7)
+                continue
+            }
+
+            //9. (remover) If still stuck we look for X-wing pairs.
+            const x_wing_pair = handler.#findXWingPairs(grid, possibilities_grid, useless_points['x_wing_pairs'] ?? null)
             if (x_wing_pair) {
                 const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, x_wing_pair)
                 if (updated_possibilities.ammount_removed === 0) {
@@ -709,10 +861,9 @@ class DifficultyHandler {
                 x_wing_pairs ++
                 // console.warn(`---> Useful X-wing pair found (${solvedCount} numbers solved to this point): `, x_wing_pair, 'possibilities removed: ', updated_possibilities.ammount_removed)
                 possibilities_grid = updated_possibilities.possibilities_grid
-                solvingStrategy = Math.max(solvingStrategy, 6)
+                solvingStrategy = Math.max(solvingStrategy, 8)
                 continue
             }
-
 
             // If we reach here, we are stuck (No Singles left)
             // console.log(solvedCount, totalEmpty, JSON.stringify(possibilities_grid))
@@ -724,8 +875,8 @@ class DifficultyHandler {
         if (isFullySolved) {
             // console.log('---> Puzzle fully solved during difficulty evaluation. Final grid: ', JSON.stringify(grid))
 
-            if (solvingStrategy >= 1) difficulty = 2 //normal
-            if (solvingStrategy >= 3) difficulty = 3 //hard
+            if (solvingStrategy >= 2) difficulty = 2 //normal
+            if (solvingStrategy >= 4) difficulty = 3 //hard
             if (solvingStrategy >= 6) difficulty = 4 //Expert
 
             if (totalEmpty > 14 && totalEmpty <= 25) difficulty = 0 //novice
@@ -735,7 +886,7 @@ class DifficultyHandler {
         }
 
         // console.log('---> Difficulty determined:', difficulty, solvingStrategy, "removed numbers: ", removed_numbers, "solved numbers: ", solvedCount, "total empty: ", totalEmpty, `strategies_used: {${naked_singles}, ${hidden_singles}, ${naked_pairs}, ${pointing_singles}, ${pointing_triples}, ${hidden_pairs}, ${x_wing_pairs}}`)
-        return {difficulty, solvingStrategy, strategies_used: {naked_singles, hidden_singles, naked_pairs, pointing_singles, pointing_triples, hidden_pairs, x_wing_pairs}}
+        return {difficulty, solvingStrategy, strategies_used: {naked_singles, hidden_singles, naked_pairs, pointing_singles, naked_triples, hidden_pairs, hidden_triples, x_wing_pairs}}
     }
 }
 

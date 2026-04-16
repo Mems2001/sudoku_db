@@ -68,14 +68,14 @@ class SudokuUtils {
 
     /** Looks for the cell with the minimum number of posible numbers to try. If the currently checked cell has not posible numbers to try (empty array), then we are at a dead end and we return false to back-track. If it returns null, then the sudoku is solved.
     */
-    static findNextCellToTry(grid, posibilities) {
+    static findNextCellToTry(grid, possibilities) {
         let min = Infinity
         let best = null
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
                 if (grid[i][j] === 0) {
                     let len
-                    if (typeof posibilities[i][j] !== 'number') len = posibilities[i][j].length
+                    if (typeof possibilities[i][j] !== 'number') len = possibilities[i][j].length
                     if (len === 0) return { row: i, col: j, deadEnd: true } // direct dead end
                     if (len < min) {
                         min = len
@@ -86,20 +86,6 @@ class SudokuUtils {
             }
         }
         return best
-    }
-
-    /**
-     * This function updates the posibilities grid in order to test puzzle's solvability when removing numbers. 
-     * @param {*} grid The sudoku grid.
-     */
-    static updatePossibilitiesGrid(grid) {
-        for (let row = 0; row < 9; row++) {
-            for (let col = 0; col < 9; col++) {
-                if (typeof grid[row][col] !== 'number') {
-                    grid[row][col] = Utils.getPossibleValues(grid, row, col)
-                }
-            }
-        }
     }
 
     /** Instead of checking for safety at each random attempted number we keep the posible numbers at each location. So, when we place any number at the sudoku grid we also remove that number from the arrays of posible numbers correspondig the same row, column and quadrant. That way any time we were to attempt a random number that random number would be guaranteed to be safe.
@@ -175,6 +161,41 @@ class SudokuUtils {
         return {possibilities_grid, changes}
     }
 
+    // Specific logic for puzzle creation
+
+    /**
+     * This function provides an array of arrays. Each sub-array represents a position unit type, those being rows, columns or quadrants. Each sub-array contains the positions corresponding to the unit type.
+     */
+    static getAllUnits() {
+        const units = []
+        // By Rows
+        for (let r = 0; r < 9; r++) {
+            let row = []
+            for (let c = 0; c < 9; c++) row.push({ row: r, col: c })
+            units.push(row)
+        }
+
+        // By Columns
+        for (let c = 0; c < 9; c++) {
+            let col = []
+            for (let r = 0; r < 9; r++) col.push({ row: r, col: c })
+            units.push(col)
+        }
+
+        // By Quadrants
+        for (let q = 0; q < 9; q++) {
+            let quadrant = []
+            const startR = Math.floor(q / 3) * 3
+            const startC = (q % 3) * 3
+            for (let i = 0; i < 9; i++) {
+                quadrant.push({ row: startR + Math.floor(i / 3), col: startC + (i % 3) })
+            }
+            units.push(quadrant)
+        }
+
+        return units
+    }
+
     static checkUselessPoints1(useless_points, candidate_constraint) {
         for (const point of useless_points) {
                     const p1_row_check = point.p1.row === candidate_constraint.p1.row
@@ -200,13 +221,13 @@ class SudokuUtils {
                 return this.checkUselessPoints1(useless_points, candidate_constraint)
             case "pointing_triples":
                 return this.checkUselessPoints1(useless_points, candidate_constraint)
+            case "naked_triples":
+                return this.checkUselessPoints1(useless_points, candidate_constraint)
             case "x_wing_pairs":
                 return this.checkUselessPoints1(useless_points, candidate_constraint)
         }
 
     }
-
-    // Specific logic for puzzle creation
 
     static removeConstraintsFromPossibilities(possibilities_grid, constraint) {
         // console.log('---> Possibilities: ', JSON.stringify(possibilities_grid))
@@ -270,18 +291,20 @@ class SudokuUtils {
                     break
                 case 'x-col':
                     for (let r = 0; r < 9; r++) {
-                        if (!Array.isArray(possibilities_grid[r][col]) || !Array.isArray(possibilities_grid[r][col2])) continue
+                        if (!Array.isArray(possibilities_grid[r][col])) continue
                         const index1 = possibilities_grid[r][col].indexOf(constraint.values[0])
                         if (index1 >= 0 && (r !== row && r !== row2)) {possibilities_grid[r][col].splice(index1, 1); ammount_removed++}
+                        if (!Array.isArray(possibilities_grid[r][col2])) continue
                         const index2 = possibilities_grid[r][col2].indexOf(constraint.values[0])
                         if (index2 >= 0 && (r !== row && r !== row2)) {possibilities_grid[r][col2].splice(index2, 1); ammount_removed++}
                     }
                     break
                 case 'x-row':
                     for (let c = 0; c < 9; c++) {
-                        if (!Array.isArray(possibilities_grid[row][c]) || !Array.isArray(possibilities_grid[row2][c])) continue
+                        if (!Array.isArray(possibilities_grid[row][c])) continue
                         const index1 = possibilities_grid[row][c].indexOf(constraint.values[0])
                         if (index1 >= 0 && (c !== col && c !== col2)) {possibilities_grid[row][c].splice(index1, 1); ammount_removed++}
+                        if (!Array.isArray(possibilities_grid[row2][c])) continue
                         const index2 = possibilities_grid[row2][c].indexOf(constraint.values[0])
                         if (index2 >= 0 && (c !== col && c !== col2)) {possibilities_grid[row2][c].splice(index2, 1); ammount_removed++}
                     }
@@ -294,13 +317,21 @@ class SudokuUtils {
         return {possibilities_grid, ammount_removed}
     }
 
-    static cleanHiddenPair(possibilities_grid, constraint) {
+    static cleanHiddenPairOrTriple(possibilities_grid, constraint) {
         const [row1, col1] = [constraint.p1.row, constraint.p1.col]
         const [row2, col2] = [constraint.p2.row, constraint.p2.col]
-        const allowedValues = new Set([constraint.values[0], constraint.values[1]])
+        if (constraint.p3) {
+            var [row3, col3] = [constraint.p3.row, constraint.p3.col]
+        }
+        if (constraint.p3) {
+            var allowedValues = new Set([constraint.values[0], constraint.values[1], constraint.values[2] ?? null])
+        } else {
+            var allowedValues = new Set([constraint.values[0], constraint.values[1]])
+        }
 
         possibilities_grid[row1][col1] = possibilities_grid[row1][col1].filter(value => allowedValues.has(value))
         possibilities_grid[row2][col2] = possibilities_grid[row2][col2].filter(value => allowedValues.has(value))
+        if (constraint.p3) possibilities_grid[row3][col3] = possibilities_grid[row3][col3].filter(value => allowedValues.has(value))
 
         return possibilities_grid
     }
