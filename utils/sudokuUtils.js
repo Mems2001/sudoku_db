@@ -197,6 +197,7 @@ class SudokuUtils {
     }
 
     static checkUselessPoints1(useless_points, candidate_constraint) {
+        if (!useless_points) return false
         for (const point of useless_points) {
                     const p1_row_check = point.p1.row === candidate_constraint.p1.row
                     const p1_col_check = point.p1.col === candidate_constraint.p1.col
@@ -225,6 +226,8 @@ class SudokuUtils {
                 return this.checkUselessPoints1(useless_points, candidate_constraint)
             case "x_wing_pairs":
                 return this.checkUselessPoints1(useless_points, candidate_constraint)
+            case "y_wing_triples":
+                return this.checkUselessPoints1(useless_points, candidate_constraint)
         }
 
     }
@@ -246,13 +249,12 @@ class SudokuUtils {
                     for (let c = 0; c < 9; c++) {
                         if (Array.isArray(possibilities_grid[row][c])) {
                             // console.log(`---> Possibilites for position (${row}, ${c}) :`, possibilities_grid[row][c])
-                            const index1 = possibilities_grid[row][c].indexOf(constraint.values[0])
-                            if (index1 >= 0 && c !== col && c !== col2 && c!== col3) {possibilities_grid[row][c].splice(index1, 1); ammount_removed++}
-                            const index2 = possibilities_grid[row][c].indexOf(constraint.values[1])
-                            if (index2 >= 0 && c !== col && c !== col2 && c!== col3) {possibilities_grid[row][c].splice(index2, 1); ammount_removed++}
-                            const index3 = possibilities_grid[row][c].indexOf(constraint.values[2])
-                            if (index3 >= 0 && c !== col && c !== col2 && c!== col3) {possibilities_grid[row][c].splice(index3, 1); ammount_removed++}
-                            // console.log(index1, index2, index3)
+                            for (let n = 0; n < 3; n++) {
+                                if (!constraint.values[n]) continue
+                                if (c === col || c === col2 || c === col3) continue
+                                const index = possibilities_grid[row][c].indexOf(constraint.values[n])
+                                if (index >= 0) {possibilities_grid[row][c].splice(index, 1); ammount_removed++}
+                            }
                         }
                     }
                     break
@@ -260,13 +262,12 @@ class SudokuUtils {
                     for (let r = 0; r < 9; r++) {
                         if (Array.isArray(possibilities_grid[r][col])) {
                             // console.log(`---> Possibilites for position (${r}, ${col}) :`, possibilities_grid[r][col])
-                            const index1 = possibilities_grid[r][col].indexOf(constraint.values[0])
-                            if (index1 >= 0 && r !== row && r !== row2 && r !== row3) {possibilities_grid[r][col].splice(index1, 1); ammount_removed++}
-                            const index2 = possibilities_grid[r][col].indexOf(constraint.values[1])
-                            if (index2 >= 0 && r !== row && r !== row2 && r !== row3) {possibilities_grid[r][col].splice(index2, 1); ammount_removed++}
-                            const index3 = possibilities_grid[r][col].indexOf(constraint.values[2])
-                            if (index3 >= 0 && r !== row && r !== row2 && r !== row3) {possibilities_grid[r][col].splice(index3, 1); ammount_removed++}
-                            // console.log(index1, index2, index3)
+                            for (let n = 0; n < 3; n++) {
+                                if (!constraint.values[n]) continue
+                                if (r === row || r === row2 || r === row3) continue
+                                const index = possibilities_grid[r][col].indexOf(constraint.values[n])
+                                if (index >= 0) {possibilities_grid[r][col].splice(index, 1); ammount_removed++}
+                            }
                         }
                     }
                     break
@@ -279,12 +280,12 @@ class SudokuUtils {
                             const c2 = c + col_start
                             if (Array.isArray(possibilities_grid[r2][c2])) {
                                 // console.log(`---> Possibilites for position (${r2}, ${c2}) :`, possibilities_grid[r2][c2])
-                                const index1 = possibilities_grid[r2][c2].indexOf(constraint.values[0])
-                                if (index1 >= 0 && (r2 !== row || c2 !== col) && (r2 !== row2 || c2 !== col2) && (r2 !== row3 || c2 !== col3)) {possibilities_grid[r2][c2].splice(index1, 1); ammount_removed ++}
-                                const index2 = possibilities_grid[r2][c2].indexOf(constraint.values[1])
-                                if (index2 >= 0 && (r2 !== row || c2 !== col) && (r2 !== row2 || c2 !== col2) && (r2 !== row3 || c2 !== col3)) {possibilities_grid[r2][c2].splice(index2, 1); ammount_removed ++}
-                                const index3 = possibilities_grid[r2][c2].indexOf(constraint.values[2])
-                                if (index3 >= 0 && (r2 !== row || c2 !== col) && (r2 !== row2 || c2 !== col2) && (r2 !== row3 || c2 !== col3)) {possibilities_grid[r2][c2].splice(index3, 1); ammount_removed ++}
+                                for (let n = 0; n < 3; n++) {
+                                    if (!constraint.values[n]) continue
+                                    if ((r2 === row && c2 === col) || (r2 === row2 && c2 === col2) || (r2 === row3 && c2 === col3)) continue
+                                    const index = possibilities_grid[r2][c2].indexOf(constraint.values[n])
+                                    if (index >= 0) {possibilities_grid[r2][c2].splice(index, 1); ammount_removed ++}
+                                }
                             }
                         }
                     }
@@ -310,6 +311,50 @@ class SudokuUtils {
                         if (Array.isArray(possibilities_grid[row2][c])) {
                             const index2 = possibilities_grid[row2][c].indexOf(constraint.values[0])
                             if (index2 >= 0 && (c !== col && c !== col2)) {possibilities_grid[row2][c].splice(index2, 1); ammount_removed++}
+                        }
+                    }
+                    break
+                default: 
+                    const pivotStr = constraint.location[0] // e.g., "row,col"
+                    const allPoints = [constraint.p1, constraint.p2, constraint.p3]
+
+                    const pivot = allPoints.find(p => `${p.row},${p.col}` === pivotStr)
+                    const pincers = allPoints.filter(p => `${p.row},${p.col}` !== pivotStr)
+                    if (!pivot || pincers.length !== 2) {
+                        console.error("---x Y-Wing data inconsistent: could not identify pivot/pincers x---")
+                        break
+                    }
+                    const pincer1Values = possibilities_grid[pincers[0].row][pincers[0].col]
+                    const pincer2Values = possibilities_grid[pincers[1].row][pincers[1].col]
+
+                    // Find the common value between pincers
+                    const targetValue = pincer1Values.find(v => pincer2Values.includes(v))
+                    if (!targetValue) break
+
+                    for (let r = 0; r < 9; r++) {
+                        for (let c = 0; c < 9; c++) {
+                            // Skip the three cells forming the Y-Wing
+                            const isSourceCell = allPoints.some(p => p.row === r && p.col === c)
+                            if (isSourceCell) continue
+                        
+                            if (!Array.isArray(possibilities_grid[r][c])) continue
+                        
+                            // Check if cell (r, c) "sees" both pincers
+                            const seesPincer1 = (r === pincers[0].row || c === pincers[0].col || 
+                                                (Math.floor(r / 3) === Math.floor(pincers[0].row / 3) && 
+                                                 Math.floor(c / 3) === Math.floor(pincers[0].col / 3)));
+
+                            const seesPincer2 = (r === pincers[1].row || c === pincers[1].col || 
+                                                (Math.floor(r / 3) === Math.floor(pincers[1].row / 3) && 
+                                                 Math.floor(c / 3) === Math.floor(pincers[1].col / 3)));
+                            
+                            if (seesPincer1 && seesPincer2) {
+                                const index = possibilities_grid[r][c].indexOf(targetValue)
+                                if (index >= 0) {
+                                    possibilities_grid[r][c].splice(index, 1)
+                                    ammount_removed++
+                                }
+                            }
                         }
                     }
                     break

@@ -684,7 +684,7 @@ class DifficultyHandler {
         return null
     }
 
-    #findYWingPairs(possibilities_grid) {
+    #findYWingPairs(possibilities_grid, useless_y_wing_triples) {
         const bivalueCells = []
 
         // Gather all cells that have exactly 2 possibilities
@@ -720,6 +720,14 @@ class DifficultyHandler {
                                 cell.values.forEach(value => alt_merged_values.add(value))
                                 cells[i].values.forEach(value => alt_merged_values.add(value))
                                 if (alt_merged_values.size !== 3) coincidences_allowed = false
+
+                                cell.values.forEach(value => {
+                                    let matches = 0
+                                    cells[i].values.forEach(value2 => {
+                                        if (value === value2) matches ++
+                                    })
+                                    if (matches > 1) coincidences_allowed = false
+                                })
                             })
                         })
 
@@ -748,7 +756,18 @@ class DifficultyHandler {
                             if (relations[key].length === 3) pivots.push(key)
                         })
                         if (pivots.length === 1) {
-                            console.log('We have a pivot!: ', pivots, cells)
+                            // console.log('We have a pivot!: ', pivots, cells)
+                            const constraint = {
+                                p1: cells[0],
+                                p2: cells[1],
+                                p3: cells[2],
+                                values: Array.from(merged_values),
+                                location: [pivots[0]]
+                            }
+
+                            if (useless_y_wing_triples && Utils.checkUselessPoints(useless_y_wing_triples, constraint, "y_wing_triples")) continue
+
+                            return constraint
                         }
                     }
                 }
@@ -784,6 +803,7 @@ class DifficultyHandler {
         let hidden_pairs = 0
         let hidden_triples = 0
         let x_wing_pairs = 0
+        let y_wing_triples = 0
 
         // Useless points tracing
         let useless_points = {}
@@ -924,7 +944,21 @@ class DifficultyHandler {
             }
 
             //10. (remover) Y-wing pairs.
-            const y_wing_triple = handler.#findYWingPairs(possibilities_grid)
+            const y_wing_triple = handler.#findYWingPairs(possibilities_grid, useless_points['y_wing_triples'] ?? null)
+            if (y_wing_triple) {
+                // console.log(y_wing_triple)
+                const updated_possibilities = Utils.removeConstraintsFromPossibilities(possibilities_grid, y_wing_triple)
+                if (updated_possibilities.ammount_removed === 0) {
+                    if (useless_points['y_wing_triples']) useless_points['y_wing_triples'].push(y_wing_triple)
+                    else useless_points['y_wing_triples'] = [y_wing_triple]
+                    // console.log(useless_points['y_wing_triples'].length)
+                    continue
+                }
+                y_wing_triples ++
+                possibilities_grid = updated_possibilities.possibilities_grid
+                solvingStrategy = Math.max(solvingStrategy, 9)
+                continue
+            }
 
             // If we reach here, we are stuck (No Singles left)
             // console.log(solvedCount, totalEmpty, JSON.stringify(possibilities_grid))
@@ -947,7 +981,7 @@ class DifficultyHandler {
         }
 
         // console.log('---> Difficulty determined:', difficulty, solvingStrategy, "removed numbers: ", removed_numbers, "solved numbers: ", solvedCount, "total empty: ", totalEmpty, `strategies_used: {${naked_singles}, ${hidden_singles}, ${naked_pairs}, ${pointing_singles}, ${pointing_triples}, ${hidden_pairs}, ${x_wing_pairs}}`)
-        return {difficulty, solvingStrategy, strategies_used: {naked_singles, hidden_singles, naked_pairs, pointing_singles, naked_triples, hidden_pairs, hidden_triples, x_wing_pairs}}
+        return {difficulty, solvingStrategy, strategies_used: {naked_singles, hidden_singles, naked_pairs, pointing_singles, naked_triples, hidden_pairs, hidden_triples, x_wing_pairs, y_wing_triples}}
     }
 }
 
